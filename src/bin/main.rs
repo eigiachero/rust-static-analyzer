@@ -11,25 +11,35 @@ extern crate rustc_span;
 use rustc_errors::registry;
 use rustc_hash::{FxHashMap, FxHashSet};
 use rustc_session::config;
-use rustc_span::source_map;
+// use rustc_span::source_map;
 use static_alias_analyzer::analyzer::analyze;
 
 use std::path;
+use std::path::PathBuf;
 use std::process;
 use std::str;
 
 fn main() {
-    let config = create_compiler_config();
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() == 1 {
+        println!("Please input a filename. Example");
+        println!("cargo run ./examples/hello_world.rs");
+        return;
+    }
+
+    let config = create_compiler_config(&args[1]);
     run_compiler(config);
 }
 
-fn create_compiler_config() -> rustc_interface::Config {
+fn create_compiler_config(filename: &str) -> rustc_interface::Config {
     let out = process::Command::new("rustc")
         .arg("--print=sysroot")
         .current_dir(".")
         .output()
         .unwrap();
+
     let sysroot = str::from_utf8(&out.stdout).unwrap().trim();
+
     let config = rustc_interface::Config {
         // Command line options
         opts: config::Options {
@@ -38,11 +48,7 @@ fn create_compiler_config() -> rustc_interface::Config {
         },
         // cfg! configuration in addition to the default ones
         crate_cfg: FxHashSet::default(), // FxHashSet<(String, Option<String>)>
-        input: config::Input::Str {
-            name: source_map::FileName::Custom("main.rs".to_string()),
-            input: "static HELLO: &str = \"Hello, world!\"; fn main() { println!(\"{}\", HELLO); }"
-                .to_string(),
-        },
+        input: config::Input::File(PathBuf::from(filename)),
         input_path: None,  // Option<PathBuf>
         output_dir: None,  // Option<PathBuf>
         output_file: None, // Option<PathBuf>
@@ -56,6 +62,7 @@ fn create_compiler_config() -> rustc_interface::Config {
         registry: registry::Registry::new(&rustc_error_codes::DIAGNOSTICS),
         make_codegen_backend: None,
     };
+
     config
 }
 
