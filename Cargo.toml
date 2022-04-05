@@ -1,0 +1,19 @@
+[package]
+name = "static_alias_analyzer"
+version = "0.1.0"
+edition = "2018"
+exclude = ["samples"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+test = false
+doctest = false
+
+[[bin]]
+name = "main"
+test = false
+doctest = false
+
+[dependencies]
+log = "0.4"
