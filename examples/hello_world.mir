@@ -1,0 +1,86 @@
+// WARNING: This output format is intended for human consumers only
+// and is subject to change without notice. Knock yourself out.
+fn main() -> () {
+    let mut _0: ();                      // return place in scope 0 at ./examples/hello_world.rs:1:15: 1:15
+    let mut _1: std::fmt::Arguments;     // in scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+    let mut _2: &[&str];                 // in scope 0 at ./examples/hello_world.rs:2:12: 2:25
+    let mut _3: &[&str; 1];              // in scope 0 at ./examples/hello_world.rs:2:12: 2:25
+    let _4: &[&str; 1];                  // in scope 0 at ./examples/hello_world.rs:2:12: 2:25
+    let mut _5: &[std::fmt::ArgumentV1]; // in scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+    let mut _6: &[std::fmt::ArgumentV1; 0]; // in scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+    let _7: &[std::fmt::ArgumentV1; 0];  // in scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+    let _8: ();                          // in scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+    let mut _9: &[std::fmt::ArgumentV1; 0]; // in scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+    let mut _10: &[&str; 1];             // in scope 0 at ./examples/hello_world.rs:2:12: 2:25
+    scope 1 {
+        debug _args => _8;               // in scope 1 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+    }
+
+    bb0: {
+        _10 = const main::promoted[1];   // scope 0 at ./examples/hello_world.rs:2:12: 2:25
+                                         // ty::Const
+                                         // + ty: &[&str; 1]
+                                         // + val: Unevaluated(main, [], Some(promoted[1]))
+                                         // mir::Constant
+                                         // + span: ./examples/hello_world.rs:2:12: 2:25
+                                         // + literal: Const { ty: &[&str; 1], val: Unevaluated(Unevaluated { def: WithOptConstParam { did: DefId(0:3 ~ hello_world[ee83]::main), const_param_did: None }, substs_: Some([]), promoted: Some(promoted[1]) }) }
+        _4 = _10;                        // scope 0 at ./examples/hello_world.rs:2:12: 2:25
+        _3 = _4;                         // scope 0 at ./examples/hello_world.rs:2:12: 2:25
+        _2 = move _3 as &[&str] (Pointer(Unsize)); // scope 0 at ./examples/hello_world.rs:2:12: 2:25
+        _9 = const main::promoted[0];    // scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+                                         // ty::Const
+                                         // + ty: &[std::fmt::ArgumentV1; 0]
+                                         // + val: Unevaluated(main, [], Some(promoted[0]))
+                                         // mir::Constant
+                                         // + span: /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+                                         // + literal: Const { ty: &[std::fmt::ArgumentV1; 0], val: Unevaluated(Unevaluated { def: WithOptConstParam { did: DefId(0:3 ~ hello_world[ee83]::main), const_param_did: None }, substs_: Some([]), promoted: Some(promoted[0]) }) }
+        _7 = _9;                         // scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+        _6 = _7;                         // scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+        _5 = move _6 as &[std::fmt::ArgumentV1] (Pointer(Unsize)); // scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+        _1 = std::fmt::Arguments::new_v1(move _2, move _5) -> bb1; // scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+                                         // mir::Constant
+                                         // + span: /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+                                         // + user_ty: UserType(0)
+                                         // + literal: Const { ty: fn(&[&'static str], &[std::fmt::ArgumentV1]) -> std::fmt::Arguments {std::fmt::Arguments::new_v1}, val: Value(Scalar(<ZST>)) }
+    }
+
+    bb1: {
+        _0 = std::io::_print(move _1) -> bb2; // scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:23: 62:73
+                                         // mir::Constant
+                                         // + span: /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:23: 62:41
+                                         // + literal: Const { ty: for<'r> fn(std::fmt::Arguments<'r>) {std::io::_print}, val: Value(Scalar(<ZST>)) }
+    }
+
+    bb2: {
+        return;                          // scope 0 at ./examples/hello_world.rs:3:2: 3:2
+    }
+}
+
+promoted[0] in main: &[std::fmt::ArgumentV1; 0] = {
+    let mut _0: &[std::fmt::ArgumentV1; 0]; // return place in scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+    let mut _1: [std::fmt::ArgumentV1; 0]; // in scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+
+    bb0: {
+        _1 = [];                         // scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+        _0 = &_1;                        // scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+        return;                          // scope 0 at /rustc/cfa3fe5af339e724209b25715282adae0c61628f/library/std/src/macros.rs:62:42: 62:72
+    }
+}
+
+promoted[1] in main: &[&str; 1] = {
+    let mut _0: &[&str; 1];              // return place in scope 0 at ./examples/hello_world.rs:2:12: 2:25
+    let mut _1: [&str; 1];               // in scope 0 at ./examples/hello_world.rs:2:12: 2:25
+
+    bb0: {
+        _1 = [const "hello world"];      // scope 0 at ./examples/hello_world.rs:2:12: 2:25
+                                         // ty::Const
+                                         // + ty: &str
+                                         // + val: Value(Slice { data: Allocation { bytes: [104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100], relocations: Relocations(SortedMap { data: [] }), init_mask: InitMask { blocks: [2047], len: Size { raw: 11 } }, align: Align { pow2: 0 }, mutability: Not, extra: () }, start: 0, end: 11 })
+                                         // mir::Constant
+                                         // + span: ./examples/hello_world.rs:2:12: 2:25
+                                         // + literal: Const { ty: &str, val: Value(Slice { data: Allocation { bytes: [104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100], relocations: Relocations(SortedMap { data: [] }), init_mask: InitMask { blocks: [2047], len: Size { raw: 11 } }, align: Align { pow2: 0 }, mutability: Not, extra: () }, start: 0, end: 11 }) }
+        _0 = &_1;                        // scope 0 at ./examples/hello_world.rs:2:12: 2:25
+        return;                          // scope 0 at ./examples/hello_world.rs:2:12: 2:25
+    }
+}
+
