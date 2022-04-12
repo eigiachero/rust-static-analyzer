@@ -1,5 +1,6 @@
 [package]
 name = "static_alias_analyzer"
+default-run = "rsaa"
 version = "0.1.0"
 edition = "2018"
 exclude = ["examples"]
@@ -11,9 +12,16 @@ test = false
 doctest = false
 
 [[bin]]
-name = "main"
+name = "rsaa"
+test = false
+doctest = false
+
+[[bin]]
+name = "cargo-rsaa"
 test = false
 doctest = false
 
 [dependencies]
 log = "0.4"
+cargo_metadata = "0.14.2"
+serde_json = "1.0.61"
