@@ -11,6 +11,6 @@ extern crate rustc_middle;
 extern crate rustc_span;
 extern crate log;
 
-
 pub mod analyzer;
 pub mod utils;
+pub mod stacked_borrows;
