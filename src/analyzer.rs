@@ -7,6 +7,10 @@ use rustc_middle::mir::Operand;
 use rustc_middle::mir::Rvalue::{*};
 use rustc_middle::mir::BorrowKind;
 use rustc_middle::ty::{TyCtxt};
+use rustc_middle::mir::terminator::TerminatorKind;
+use rustc_middle::mir::ProjectionElem;
+use rustc_middle::ty::WithOptConstParam;
+use rustc_middle::mir::Field;
 // use crate::utils::print_mir;
 use crate::stacked_borrows::{*};
 
@@ -28,6 +32,10 @@ pub fn analyze<'tcx>(tcx: TyCtxt) {
             stacked_borrows: Stack::new()
         };
         visitor.visit_body(tcx.optimized_mir(entry_fn_id));
+        // visitor.visit_body(&tcx.mir_built(WithOptConstParam {
+        //     did: entry_fn_id.as_local().unwrap(),
+        //     const_param_did: Some(entry_fn_id),
+        // }).steal());
 
     }
 }
@@ -118,11 +126,8 @@ impl<'tcx> Visitor<'tcx> for MirVisitor<'tcx> {
         match rvalue {
             Use(operand) => {
                 print!("use ");
-                if place.projection.is_empty() {
-                    self.stacked_borrows.new_ref(tag, Permission::Unique);
-                }
-                self.stacked_borrows.use_value(tag);
                 self.visit_operand(operand, location);
+                self.add_to_stack(place, tag);
             },
             Ref(_region, borrow_kind, place) => {
                 print!("ref ");
@@ -142,11 +147,40 @@ impl<'tcx> Visitor<'tcx> for MirVisitor<'tcx> {
                 self.stacked_borrows.use_value(Tag::Tagged(place.local.as_u32()));
                 self.stacked_borrows.new_ref(tag, Permission::SharedReadWrite);
             }
-            other => println!("{:?}", other),
+            Aggregate(_kind,operands) => {
+                print!("agg ");
+                for operand in operands {
+                    self.visit_operand(operand, location);
+                }
+                self.add_to_stack(place, tag);
+            },
+            Cast(_cast_kind, operand, _ty) => {
+                print!("kst ");
+                self.visit_operand(operand, location);
+                self.add_to_stack(place, tag);
+            },
+            BinaryOp(_bin_op, box_tuple) => {
+                let (operand1, operand2) = *box_tuple.clone();
+                self.visit_operand(&operand1, location);
+                self.visit_operand(&operand2, location);
+                self.add_to_stack(place, tag);
+
+            }
+            CheckedBinaryOp(_bin_op, box_tuple) => {
+                let (operand1, operand2) = *box_tuple.clone();
+                self.visit_operand(&operand1, location);
+                self.visit_operand(&operand2, location);
+                self.add_to_stack(place, tag);
+
+            }
+            other => println!("Rvalue kind not recognized {:?} ", other),
         }
 
         println!("{:#?} Assign {:?} = {:?} | {:#?}", location, place, rvalue, self.stacked_borrows);
+        // println!("{:#?} Assign {:?} = {:?}", location, place, rvalue);
     }
+
+
 
     fn visit_operand(
         &mut self,
@@ -155,10 +189,16 @@ impl<'tcx> Visitor<'tcx> for MirVisitor<'tcx> {
     ) {
         match operand {
             Operand::Move(place) => {
-                self.stacked_borrows.use_value(Tag::Tagged(place.local.as_u32()));
+                // println!("Move TAG: {:?}", place.local.as_u32());
+                if !place.projection.is_empty() {
+                    self.stacked_borrows.use_value(Tag::Tagged(place.local.as_u32()));
+                }
             }
             Operand::Copy(place) => {
-                self.stacked_borrows.use_value(Tag::Tagged(place.local.as_u32()));
+                // println!("Copy TAG: {:?}", place.local.as_u32());
+                if !place.projection.is_empty() {
+                    self.stacked_borrows.use_value(Tag::Tagged(place.local.as_u32()));
+                }
             }
             Operand::Constant(_) => {}
         }
@@ -169,6 +209,57 @@ impl<'tcx> Visitor<'tcx> for MirVisitor<'tcx> {
         terminator: &Terminator<'tcx>,
         location: Location
     ) {
-        println!("Terminator {:#?} - location {:#?}", terminator.kind, location);
+        match terminator.kind.clone() {
+            TerminatorKind::Call {
+                func,
+                args,
+                destination,
+                cleanup,
+                from_hir_call,
+                fn_span
+            } => {
+                for arg in args {
+                    self.visit_operand(&arg, location);
+                }
+
+                let (place, _) = destination.unwrap();
+                let tag = Tag::Tagged(place.local.as_u32());
+                if place.projection.is_empty() {
+                    self.stacked_borrows.new_ref(tag, Permission::Unique);
+                }
+                self.stacked_borrows.use_value(tag);
+
+
+            },
+            TerminatorKind::Assert {
+                cond,
+                expected,
+                msg,
+                target,
+                cleanup,
+            } => {
+                self.visit_operand(&cond, location);
+            },
+            TerminatorKind::Return => {},
+            _ => {
+                println!("Terminator Kind not recognized");
+            }
+        }
+        // println!("{:#?} Terminator {:#?} | {:#?}", location, terminator.kind, self.stacked_borrows);
+        println!("{:#?} Terminator {:#?}", location, terminator.kind);
+    }
+}
+
+impl<'tcx> MirVisitor<'tcx> {
+    fn add_to_stack(&mut self, place: &Place, tag: Tag) {
+        if place.projection.is_empty() {
+            self.stacked_borrows.new_ref(tag, Permission::Unique);
+        } else {
+            match place.projection[0] {
+                ProjectionElem::Deref => {}
+                _ => {self.stacked_borrows.new_ref(tag, Permission::Unique);}
+            }
+        }
+        self.stacked_borrows.use_value(tag);
     }
 }

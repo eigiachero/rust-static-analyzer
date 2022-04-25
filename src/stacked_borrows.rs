@@ -69,7 +69,6 @@ impl Stack {
             return;
         }
         self.borrows.push_front(new_item);
-
     }
 
     pub fn use_value(&mut self, tag: Tag) {
