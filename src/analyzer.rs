@@ -9,6 +9,8 @@ use rustc_middle::mir::BorrowKind;
 use rustc_middle::ty::{TyCtxt};
 use rustc_middle::mir::terminator::TerminatorKind;
 use rustc_middle::mir::ProjectionElem;
+use rustc_middle::mir::ConstantKind;
+use rustc_middle::ty::TyKind;
 use rustc_middle::ty::WithOptConstParam;
 use rustc_middle::mir::Field;
 // use crate::utils::print_mir;
@@ -28,6 +30,7 @@ pub fn analyze<'tcx>(tcx: TyCtxt) {
         // print_mir(tcx, entry_fn_id);
         let mut visitor = MirVisitor {
             tcx,
+            args: Vec::new(),
             local_declarations: LocalDecls::new(),
             stacked_borrows: Stack::new()
         };
@@ -42,19 +45,24 @@ pub fn analyze<'tcx>(tcx: TyCtxt) {
 
 struct MirVisitor<'tcx> {
     tcx: TyCtxt<'tcx>,
+    args: Vec<Operand<'tcx>>,
     local_declarations: LocalDecls<'tcx>,
     stacked_borrows: Stack,
 }
+
 
 impl<'tcx> Visitor<'tcx> for MirVisitor<'tcx> {
     fn visit_body(&mut self, body: &Body<'tcx>) {
         // println!("Body {:#?}", body);
 
         println!("Main body -- Start");
+
         let local_declarations = body.local_decls.clone();
         for (local, local_decl) in local_declarations.into_iter_enumerated() {
             self.visit_local_decl(local, &local_decl);
         }
+
+        self.push_args();
 
         self.local_declarations = body.local_decls.clone();
 
@@ -188,19 +196,23 @@ impl<'tcx> Visitor<'tcx> for MirVisitor<'tcx> {
         location: Location
     ) {
         match operand {
-            Operand::Move(place) => {
-                // println!("Move TAG: {:?}", place.local.as_u32());
+            Operand::Move(place) | Operand::Copy(place) => {
+                // println!("Move-Copy TAG: {:?}", place.local.as_u32());
                 if !place.projection.is_empty() {
                     self.stacked_borrows.use_value(Tag::Tagged(place.local.as_u32()));
                 }
             }
-            Operand::Copy(place) => {
-                // println!("Copy TAG: {:?}", place.local.as_u32());
-                if !place.projection.is_empty() {
-                    self.stacked_borrows.use_value(Tag::Tagged(place.local.as_u32()));
+            Operand::Constant(boxed_constant) => {
+                let constant = *boxed_constant.clone();
+                match constant.literal {
+                    ConstantKind::Ty(cnst) => {
+                        // println!("ty {:#?}", cnst)
+                    },
+                    ConstantKind::Val(const_val, ty) => {
+                        // println!("val {:#?} {:#?}", const_val, ty)
+                    }
                 }
             }
-            Operand::Constant(_) => {}
         }
     }
 
@@ -218,8 +230,34 @@ impl<'tcx> Visitor<'tcx> for MirVisitor<'tcx> {
                 from_hir_call,
                 fn_span
             } => {
-                for arg in args {
-                    self.visit_operand(&arg, location);
+
+                println!("call {:#?}", &func);
+                // may-alias
+                // analizar el perfil de la funcion
+
+                // visitar body de la funcion llamada
+
+                // println!("args {:#?}", &args);
+                for arg in &args {
+                    self.visit_operand(arg, location);
+                }
+
+                if let Operand::Constant(boxed_constant) = &func {
+                    let constant = *boxed_constant.clone();
+                    if let ConstantKind::Ty(cnst) = constant.literal {
+                        if cnst.ty.is_fn() {
+                            // println!("const ty {:#?}", cnst.ty);
+                            if let TyKind::FnDef(def_id, _) = cnst.ty.kind() {
+                                let mut visitor = MirVisitor {
+                                    tcx: self.tcx,
+                                    args,
+                                    local_declarations: LocalDecls::new(),
+                                    stacked_borrows: Stack::new()
+                                };
+                                visitor.visit_body(self.tcx.optimized_mir(*def_id));
+                            }
+                        }
+                    }
                 }
 
                 let (place, _) = destination.unwrap();
@@ -245,9 +283,10 @@ impl<'tcx> Visitor<'tcx> for MirVisitor<'tcx> {
                 println!("Terminator Kind not recognized");
             }
         }
-        // println!("{:#?} Terminator {:#?} | {:#?}", location, terminator.kind, self.stacked_borrows);
-        println!("{:#?} Terminator {:#?}", location, terminator.kind);
+        println!("{:#?} Terminator {:#?} | {:#?}", location, terminator.kind, self.stacked_borrows);
+        // println!("{:#?} Terminator {:#?}", location, terminator.kind);
     }
+
 }
 
 impl<'tcx> MirVisitor<'tcx> {
@@ -261,5 +300,13 @@ impl<'tcx> MirVisitor<'tcx> {
             }
         }
         self.stacked_borrows.use_value(tag);
+    }
+
+    fn push_args(&mut self) {
+        let mut index = 1;
+        for _arg in &self.args {
+            self.stacked_borrows.new_ref(Tag::Tagged(index), Permission::Unique);
+            index += 1;
+        }
     }
 }
