@@ -1,5 +1,6 @@
 use rustc_middle::mir::visit::Visitor;
 use rustc_middle::ty::{TyCtxt};
+use petgraph::dot::{Dot, Config};
 
 // use crate::utils::print_mir;
 use crate::mir_visitor::{MirVisitor};
@@ -15,14 +16,17 @@ pub fn analyze<'tcx>(tcx: TyCtxt) {
     }
 
     if tcx.is_mir_available(entry_fn_id) {
-        // print_mir(tcx, entry_fn_id);
-
         let mut visitor = MirVisitor::new(tcx, Vec::new());
         visitor.visit_body(tcx.optimized_mir(entry_fn_id));
+
+        println!("{:?}", Dot::with_config(&visitor.alias_graph.graph, &[Config::EdgeNoLabel]));
+
+        // print_mir(tcx, entry_fn_id);
 
         // visitor.visit_body(&tcx.mir_built(WithOptConstParam {
         //     did: entry_fn_id.as_local().unwrap(),
         //     const_param_did: Some(entry_fn_id),
         // }).steal());
+
     }
 }

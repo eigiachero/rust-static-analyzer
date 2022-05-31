@@ -24,4 +24,4 @@ doctest = false
 [dependencies]
 log = "0.4"
 cargo_metadata = "0.14.2"
-serde_json = "1.0.61"
+petgraph = "0.6.0"

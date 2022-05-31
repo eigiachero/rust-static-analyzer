@@ -1,5 +1,6 @@
 #![feature(rustc_private)]
 #![allow(unused_variables)]
+#![feature(drain_filter)]
 
 extern crate rustc_ast;
 extern crate rustc_data_structures;
@@ -16,3 +17,4 @@ pub mod analyzer;
 pub mod utils;
 pub mod stacked_borrows;
 pub mod mir_visitor;
+pub mod points_to;
