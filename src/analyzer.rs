@@ -1,9 +1,7 @@
-use rustc_middle::mir::visit::Visitor;
+use crate::mir_visitor::body_visitor::{MirVisitor};
 use rustc_middle::ty::{TyCtxt};
 use petgraph::dot::{Dot, Config};
 
-// use crate::utils::print_mir;
-use crate::mir_visitor::{MirVisitor};
 
 pub fn analyze<'tcx>(tcx: TyCtxt) {
     let entry_fn_id;
@@ -20,13 +18,5 @@ pub fn analyze<'tcx>(tcx: TyCtxt) {
         visitor.visit_body(tcx.optimized_mir(entry_fn_id));
 
         println!("{:?}", Dot::with_config(&visitor.alias_graph.graph, &[Config::EdgeNoLabel]));
-
-        // print_mir(tcx, entry_fn_id);
-
-        // visitor.visit_body(&tcx.mir_built(WithOptConstParam {
-        //     did: entry_fn_id.as_local().unwrap(),
-        //     const_param_did: Some(entry_fn_id),
-        // }).steal());
-
     }
 }

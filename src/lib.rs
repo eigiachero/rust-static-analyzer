@@ -16,5 +16,11 @@ extern crate log;
 pub mod analyzer;
 pub mod utils;
 pub mod stacked_borrows;
-pub mod mir_visitor;
 pub mod points_to;
+
+pub mod mir_visitor {
+    pub mod block_visitor;
+    pub mod body_visitor;
+    pub mod terminator_visitor;
+    pub mod helper;
+}
