@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use petgraph::graph::{Graph, NodeIndex};
-use petgraph::visit::Dfs;
+use petgraph::visit::{Dfs, EdgeRef};
 
 pub struct PointsToGraph {
     pub graph: Graph::<u32,()>,
@@ -20,14 +20,36 @@ impl PointsToGraph {
         self.variables.get(&a).unwrap().to_owned()
     }
 
+    pub fn does_variable_exits(&self, a: u32) -> bool {
+        match self.variables.get(&a) {
+            Some(variable) => true,
+            None => false,
+        }
+    }
+
     pub fn constant(&mut self, a: u32) {
-        self.variables.insert(a, self.graph.add_node(a));
+        if self.does_variable_exits(a) {
+            // Removes all outgoing edges
+            let graph_clone = self.graph.clone();
+            for edge in graph_clone.edges(self.get_variable(a)) {
+                self.graph.remove_edge(edge.id());
+            }
+        } else {
+            self.variables.insert(a, self.graph.add_node(a));
+        }
+
         // println!("{:?} | Added {}", self.variables, a);
     }
 
     pub fn points_to(&mut self, a: u32, b: u32) {
-        let node = self.graph.add_node(a);
-        self.variables.insert(a, node);
+        let node;
+        if self.does_variable_exits(a) {
+            node = self.get_variable(a);
+        } else {
+            node = self.graph.add_node(a);
+            self.variables.insert(a, node);
+        }
+
         self.graph.add_edge(node, self.get_variable(b), ());
         // println!("{:?} | {} points to {}", self.variables, a, b);
     }

@@ -7,8 +7,8 @@ use rustc_middle::mir::Mutability::Mut;
 use crate::stacked_borrows::{*};
 use super::body_visitor::MirVisitor;
 
-// Stacked Borrows helper functions
 impl<'tcx> MirVisitor<'tcx> {
+    // Stacked Borrows helper functions
     pub fn place_to_tag(&self, place: &Place) -> Tag {
         Tag::Tagged(place.local.as_u32())
     }
@@ -33,6 +33,7 @@ impl<'tcx> MirVisitor<'tcx> {
         }
     }
 
+    // Points-to analisis helper functions
     pub fn is_mutable(&self, operand: &mut Operand) -> bool {
         match operand {
             Operand::Move(place) | Operand::Copy(place) => {

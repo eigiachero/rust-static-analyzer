@@ -6,7 +6,6 @@ use rustc_middle::mir::Rvalue::{*};
 use rustc_middle::mir::BorrowKind;
 use rustc_middle::mir::ConstantKind;
 
-// use crate::utils::print_mir;
 use crate::stacked_borrows::{*};
 use super::body_visitor::MirVisitor;
 
