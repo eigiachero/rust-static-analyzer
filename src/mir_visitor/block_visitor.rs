@@ -89,11 +89,13 @@ impl<'tcx> MirVisitor<'tcx> {
                     self.visit_operand(operand, location);
                 }
                 self.add_to_stack(place, tag);
+                self.alias_graph.constant(variable);
             },
             Cast(_cast_kind, operand, _ty) => {
                 print!("kst ");
                 self.visit_operand(operand, location);
                 self.add_to_stack(place, tag);
+                self.alias_graph.constant(variable);
             },
             BinaryOp(_op, box_tuple) | CheckedBinaryOp(_op, box_tuple) => {
                 let (operand1, operand2) = *box_tuple.clone();

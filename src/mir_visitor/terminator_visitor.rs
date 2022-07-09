@@ -42,12 +42,12 @@ impl<'tcx> MirVisitor<'tcx> {
                 }
 
                 // Visit inside function
-                if let Operand::Constant(boxed_constant) = &func {
-                    let constant = *boxed_constant.clone();
-                    if let ConstantKind::Ty(cnst) = constant.literal {
-                        if cnst.ty.is_fn() {
-                            println!("const ty {:#?}", cnst.ty);
-                            if let TyKind::FnDef(def_id, subs_ref) = cnst.ty.kind() {
+                let constant = &func.constant().unwrap();
+                if let ConstantKind::Ty(cnst) = constant.literal {
+                    if cnst.ty.is_fn() {
+                        println!("const ty {:#?}", cnst.ty);
+                        if let TyKind::FnDef(def_id, subs_ref) = cnst.ty.kind() {
+                            if !constant.span.from_expansion() { // Ignore if it's a macro
                                 let mut visitor = MirVisitor::new(self.tcx, args);
                                 visitor.visit_body(self.tcx.optimized_mir(*def_id));
                             }
