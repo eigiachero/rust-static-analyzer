@@ -29,6 +29,7 @@ impl<'tcx> MirVisitor<'tcx> {
         let mut index = 1;
         for _arg in &self.args {
             self.stacked_borrows.new_ref(Tag::Tagged(index), Permission::Unique);
+            self.alias_graph.constant(index);
             index += 1;
         }
     }

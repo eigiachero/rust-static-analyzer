@@ -52,13 +52,17 @@ impl<'tcx> MirVisitor<'tcx> {
         let tag = self.place_to_tag(place);
 
         match rvalue {
-            // Move or copy operand (x)
+            // Create or mutate variable (x or *x)
             Use(operand) => {
                 print!("use ");
                 self.visit_operand(operand, location);
                 self.add_to_stack(place, tag);
-                self.alias_graph.constant(variable);
-
+                if !place.is_indirect() { // is not a (*x)
+                    self.alias_graph.constant(variable);
+                }
+                if let Operand::Move(_) = operand {
+                    self.alias_graph.points_to(variable, self.operand_as_u32(operand));
+                }
             },
             // Reference (&x or &mut x)
             Ref(_region, borrow_kind, place) => {

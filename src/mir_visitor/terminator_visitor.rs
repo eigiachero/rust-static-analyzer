@@ -1,9 +1,13 @@
+use std::collections::HashMap;
+
 use rustc_middle::mir::{Location, Terminator};
 use rustc_middle::mir::Operand;
 use rustc_middle::mir::terminator::TerminatorKind;
 use rustc_middle::mir::ConstantKind;
 use rustc_middle::ty::TyKind;
 
+
+use petgraph::dot::{Dot, Config};
 // use crate::utils::print_mir;
 use crate::stacked_borrows::{*};
 use super::body_visitor::MirVisitor;
@@ -27,8 +31,12 @@ impl<'tcx> MirVisitor<'tcx> {
                 // To-do: analyze function profile, may-alias
 
                 // Visit arg
+                let mut index = 1;
+                let mut arg_refs: HashMap<u32, u32> = HashMap::new();
                 for arg in &args {
                     self.visit_operand(arg, location);
+                    arg_refs.insert(index, self.operand_as_u32(arg));
+                    index+=1;
                 }
 
                 // Check if there are 2 or more mutable arguments with alias
@@ -50,6 +58,9 @@ impl<'tcx> MirVisitor<'tcx> {
                             if !constant.span.from_expansion() { // Ignore if it's a macro
                                 let mut visitor = MirVisitor::new(self.tcx, args);
                                 visitor.visit_body(self.tcx.optimized_mir(*def_id));
+
+                                println!("{:?}", Dot::with_config(&visitor.alias_graph.graph, &[Config::EdgeNoLabel]));
+                                self.alias_graph.extend(visitor.alias_graph.graph, arg_refs);
                             }
                         }
                     }

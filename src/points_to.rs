@@ -76,4 +76,26 @@ impl PointsToGraph {
         false
     }
 
+    pub fn extend(&mut self, graph: Graph::<u32,()>, args_ref: HashMap<u32, u32>) {
+        let mut variables: HashMap<u32, NodeIndex> = HashMap::new();
+        let cloned_graph = graph.clone();
+        let (nodes, edges) = cloned_graph.into_nodes_edges();
+
+        for node in nodes {
+            let node_index = self.graph.add_node(node.weight);
+            if args_ref.contains_key(&node.weight) {
+                let real_arg = args_ref.get(&node.weight).unwrap().to_owned();
+                variables.insert(node.weight, self.get_variable(real_arg));
+            } else {
+                variables.insert(node.weight, node_index);
+            }
+        }
+
+        for edge in edges {
+            let a = variables.get(graph.node_weight(edge.source()).unwrap()).unwrap().to_owned();
+            let b = variables.get(graph.node_weight(edge.target()).unwrap()).unwrap().to_owned();
+            self.graph.add_edge(a, b, ());
+        }
+    }
+
 }
