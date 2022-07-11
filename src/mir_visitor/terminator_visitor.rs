@@ -56,8 +56,9 @@ impl<'tcx> MirVisitor<'tcx> {
                         println!("const ty {:#?}", cnst.ty);
                         if let TyKind::FnDef(def_id, subs_ref) = cnst.ty.kind() {
                             if !constant.span.from_expansion() { // Ignore if it's a macro
-                                let mut visitor = MirVisitor::new(self.tcx, args);
-                                visitor.visit_body(self.tcx.optimized_mir(*def_id));
+                                let body = self.tcx.optimized_mir(*def_id);
+                                let mut visitor = MirVisitor::new(self.tcx, body, args);
+                                visitor.visit_body(body);
 
                                 println!("{:?}", Dot::with_config(&visitor.alias_graph.graph, &[Config::EdgeNoLabel]));
                                 self.alias_graph.extend(visitor.alias_graph.graph, arg_refs);
@@ -82,6 +83,20 @@ impl<'tcx> MirVisitor<'tcx> {
                 ..
             } => {
                 self.visit_operand(&cond, location);
+            },
+            TerminatorKind::SwitchInt {
+                discr,
+                switch_ty,
+                targets
+            } => {
+                // println!("SwitchInt {:#?} {:#?} {:#?}", discr, switch_ty, targets);
+                self.visit_operand(&discr, location);
+            },
+            TerminatorKind::Goto {
+                target
+            } => {
+                // println!("goto {:#?}");
+                // self.visit_basic_block_data(target, self.body.index(target));
             },
             TerminatorKind::Return => {},
             _ => {

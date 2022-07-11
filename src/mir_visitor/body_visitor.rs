@@ -7,6 +7,7 @@ use crate::points_to::PointsToGraph;
 
 pub struct MirVisitor<'tcx> {
     pub tcx: TyCtxt<'tcx>,
+    pub body: &'tcx Body<'tcx>,
     pub args: Vec<Operand<'tcx>>,
     pub local_declarations: LocalDecls<'tcx>,
     pub stacked_borrows: Stack,
@@ -15,9 +16,10 @@ pub struct MirVisitor<'tcx> {
 
 // Basic Functions
 impl<'tcx> MirVisitor<'tcx> {
-    pub fn new(tcx: TyCtxt<'tcx>, args: Vec<Operand<'tcx>>) -> Self {
+    pub fn new(tcx: TyCtxt<'tcx>, body:&'tcx Body<'tcx>, args: Vec<Operand<'tcx>>) -> Self {
         MirVisitor {
             tcx,
+            body,
             args,
             local_declarations: LocalDecls::new(),
             stacked_borrows: Stack::new(),

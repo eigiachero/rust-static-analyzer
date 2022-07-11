@@ -14,8 +14,9 @@ pub fn analyze<'tcx>(tcx: TyCtxt) {
     }
 
     if tcx.is_mir_available(entry_fn_id) {
-        let mut visitor = MirVisitor::new(tcx, Vec::new());
-        visitor.visit_body(tcx.optimized_mir(entry_fn_id));
+        let function_body = tcx.optimized_mir(entry_fn_id);
+        let mut visitor = MirVisitor::new(tcx,&function_body, Vec::new());
+        visitor.visit_body(function_body);
 
         println!("{:?}", Dot::with_config(&visitor.alias_graph.graph, &[Config::EdgeNoLabel]));
     }
