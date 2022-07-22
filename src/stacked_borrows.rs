@@ -62,6 +62,10 @@ impl Stack {
         Stack { borrows: VecDeque::new() }
     }
 
+    pub fn clean(&mut self) {
+        self.borrows.clear();
+    }
+
     pub fn new_ref(&mut self, tag: Tag, permission: Permission) {
         let new_item = StackItem::new(tag, permission);
         if self.borrows.contains(&new_item) {

@@ -38,6 +38,7 @@ impl<'tcx> MirVisitor<'tcx> {
             self.visit_local_decl(local, &local_decl);
         }
 
+        // Visit arguments and local declarations
         self.push_args();
         self.local_declarations = body.local_decls.clone();
         println!("\n");

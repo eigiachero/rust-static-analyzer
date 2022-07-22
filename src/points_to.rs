@@ -55,6 +55,10 @@ impl PointsToGraph {
     }
 
     pub fn are_alias(&self, a:u32, b:u32) -> bool {
+        if !self.does_variable_exits(a) || !self.does_variable_exits(b) {
+            return false;
+        }
+
         let mut nodes_from_a = Vec::new();
         let (a, b) = (self.get_variable(a), self.get_variable(b));
 

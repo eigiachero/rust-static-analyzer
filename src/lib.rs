@@ -11,6 +11,7 @@ extern crate rustc_hir_pretty;
 extern crate rustc_interface;
 extern crate rustc_middle;
 extern crate rustc_span;
+extern crate rustc_target;
 extern crate log;
 
 pub mod analyzer;

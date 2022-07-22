@@ -1,6 +1,5 @@
 use rustc_middle::mir::{Place};
 use rustc_middle::mir::Operand;
-use rustc_middle::mir::ProjectionElem;
 use rustc_middle::mir::Mutability::Mut;
 
 // use crate::utils::print_mir;
@@ -14,13 +13,8 @@ impl<'tcx> MirVisitor<'tcx> {
     }
 
     pub fn add_to_stack(&mut self, place: &Place, tag: Tag) {
-        if place.projection.is_empty() {
+        if !place.is_indirect() { // is not a (*x)
             self.stacked_borrows.new_ref(tag, Permission::Unique);
-        } else {
-            match place.projection[0] {
-                ProjectionElem::Deref => {}
-                _ => {self.stacked_borrows.new_ref(tag, Permission::Unique);}
-            }
         }
         self.stacked_borrows.use_value(tag);
     }

@@ -55,28 +55,28 @@ impl<'tcx> MirVisitor<'tcx> {
                     if cnst.ty.is_fn() {
                         println!("const ty {:#?}", cnst.ty);
                         if let TyKind::FnDef(def_id, subs_ref) = cnst.ty.kind() {
-                            if !constant.span.from_expansion() { // Ignore if it's a macro
+                            // Ignore if it's a macro or if the mir is not available
+                            if !constant.span.from_expansion() && self.tcx.is_mir_available(*def_id) {
                                 let body = self.tcx.optimized_mir(*def_id);
                                 let mut visitor = MirVisitor::new(self.tcx, body, args);
                                 visitor.visit_body(body);
 
                                 println!("{:?}", Dot::with_config(&visitor.alias_graph.graph, &[Config::EdgeNoLabel]));
-                                self.alias_graph.extend(visitor.alias_graph.graph, arg_refs);
+                                // self.alias_graph.extend(visitor.alias_graph.graph, arg_refs);
                             }
                         }
                     }
                 }
 
                 // Add result variable to stack
-                let (place, _) = destination.unwrap();
-                let tag = self.place_to_tag(&place);
-                if place.projection.is_empty() {
-                    self.stacked_borrows.new_ref(tag, Permission::Unique);
-                    self.alias_graph.constant(place.local.as_u32());
+                if let Some((place, _)) = destination {
+                    let tag = self.place_to_tag(&place);
+                    if !place.is_indirect() { // place does not contain a Deref
+                        self.stacked_borrows.new_ref(tag, Permission::Unique);
+                        self.alias_graph.constant(place.local.as_u32());
+                    }
+                    self.stacked_borrows.use_value(tag);
                 }
-                self.stacked_borrows.use_value(tag);
-
-
             },
             TerminatorKind::Assert {
                 cond,
@@ -98,7 +98,17 @@ impl<'tcx> MirVisitor<'tcx> {
                 // println!("goto {:#?}");
                 // self.visit_basic_block_data(target, self.body.index(target));
             },
-            TerminatorKind::Return => {},
+            TerminatorKind::Drop {
+                place,
+                target,
+                unwind
+            } => {
+                self.stacked_borrows.clean();
+            }
+            TerminatorKind::Return
+            | TerminatorKind::Resume
+            | TerminatorKind::Unreachable
+            => {},
             _ => {
                 println!("Terminator Kind not recognized");
             }

@@ -1,10 +1,11 @@
 use rustc_middle::mir::{BasicBlock, BasicBlockData, Statement, Location};
 use rustc_middle::mir::{Place, Rvalue};
-use rustc_middle::mir::StatementKind::{Assign};
+use rustc_middle::mir::StatementKind::{Assign, SetDiscriminant, StorageDead, StorageLive};
 use rustc_middle::mir::Operand;
 use rustc_middle::mir::Rvalue::{*};
 use rustc_middle::mir::BorrowKind;
 use rustc_middle::mir::ConstantKind;
+use rustc_target::abi::VariantIdx;
 
 use crate::stacked_borrows::{*};
 use super::body_visitor::MirVisitor;
@@ -18,10 +19,13 @@ impl<'tcx> MirVisitor<'tcx> {
     ) {
         println!("Block {:#?} --Start", block);
         let mut location = block.start_location();
+        // Visit each statement of the basic block
         for statement in &data.statements {
             self.visit_statement(statement, location);
             location = location.successor_within_block();
         }
+
+        // Visit the basic block terminator if there is one
         if let Some(terminator) = &data.terminator {
             self.visit_terminator(terminator, location);
         }
@@ -37,9 +41,28 @@ impl<'tcx> MirVisitor<'tcx> {
             Assign(assignment_box) => {
                 let (place, rvalue) = &**assignment_box;
                 self.visit_assign(place, rvalue, location);
-            }
+            },
+            SetDiscriminant {
+                place,
+                variant_index,
+            } => self.visit_set_discriminant(place, *variant_index),
+            StorageDead(local) | StorageLive(local) => self.visit_storage(*local),
+
             other => println!("Statement Kind not recognized {:?}", other)
         }
+    }
+
+    fn visit_storage(&mut self, local: rustc_middle::mir::Local) {
+        let _variable = local.as_u32();
+        // self.alias_graph.constant(variable);
+    }
+
+    fn visit_set_discriminant(
+        &mut self,
+        place: &Place<'tcx>,
+        variant_index: VariantIdx,
+    ) {
+        self.add_to_stack(place, self.place_to_tag(place));
     }
 
     fn visit_assign(
@@ -102,10 +125,35 @@ impl<'tcx> MirVisitor<'tcx> {
                 self.alias_graph.constant(variable);
             },
             BinaryOp(_op, box_tuple) | CheckedBinaryOp(_op, box_tuple) => {
+                print!("bin ");
                 let (operand1, operand2) = *box_tuple.clone();
                 self.visit_operand(&operand1, location);
                 self.visit_operand(&operand2, location);
                 self.add_to_stack(place, tag);
+                self.alias_graph.constant(variable);
+
+            },
+            UnaryOp(unary, operand) => {
+                print!("un  ");
+                self.visit_operand(&operand, location);
+                self.add_to_stack(place, tag);
+                self.alias_graph.constant(variable);
+            },
+            // SizeOf(T) - AlignOf(T)
+            NullaryOp(_null_op, _operand) => {
+                print!("nul ");
+                self.add_to_stack(place, tag);
+                self.alias_graph.constant(variable);
+            },
+            ShallowInitBox(operand, _ty) => {
+                print!("box ");
+                self.add_to_stack(place, tag);
+                self.alias_graph.points_to(variable, self.operand_as_u32(operand));
+            },
+            Discriminant(_place) => {
+                print!("dsc ");
+                self.add_to_stack(place, tag);
+                self.alias_graph.constant(variable);
 
             }
             other => println!("Rvalue kind not recognized {:?} ", other),
