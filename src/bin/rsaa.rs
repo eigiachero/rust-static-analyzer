@@ -21,14 +21,19 @@ use std::str;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    if args.len() == 1 {
-        println!("Please input a filename. Example");
-        println!("cargo run ./examples/hello_world.rs");
+    if args.len() < 2 {
+        println!("Please input a filename. Example usage");
+        println!("cargo run ./examples/hello_world.rs {{main function name}}");
         return;
     }
 
     let config = create_compiler_config(&args[1]);
-    run_compiler(config);
+    let main_name = if args.len() > 2 {
+        Some((&args[2]).to_owned())
+    } else {
+        None
+    };
+    run_compiler(config, main_name);
 }
 
 fn create_compiler_config(filename: &str) -> rustc_interface::Config {
@@ -66,12 +71,12 @@ fn create_compiler_config(filename: &str) -> rustc_interface::Config {
     config
 }
 
-fn run_compiler(config: rustc_interface::Config) {
+fn run_compiler(config: rustc_interface::Config, main_function_name: Option<String>) {
     rustc_interface::run_compiler(config, |compiler| {
         compiler.enter(|queries| {
             // Analyze the program and inspect the types of definitions.
             queries.global_ctxt().unwrap().take().enter(|tcx| {
-                analyze(tcx);
+                analyze(tcx, main_function_name);
             })
         });
     });

@@ -19,8 +19,14 @@ use std::path;
 use std::path::PathBuf;
 
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    let main_name = if args.len() >= 3 {
+        Some((&args[2]).to_owned())
+    } else {
+        None
+    };
     let config = create_compiler_config();
-    run_compiler(config);
+    run_compiler(config, main_name);
 }
 
 fn compile_time_sysroot() -> Option<String> {
@@ -74,12 +80,12 @@ fn create_compiler_config() -> rustc_interface::Config {
     config
 }
 
-fn run_compiler(config: rustc_interface::Config) {
+fn run_compiler(config: rustc_interface::Config, main_name: Option<String>) {
     rustc_interface::run_compiler(config, |compiler| {
         compiler.enter(|queries| {
             // Analyze the program and inspect the types of definitions.
             queries.global_ctxt().unwrap().take().enter(|tcx| {
-                analyze(tcx);
+                analyze(tcx, main_name);
             })
         });
     });

@@ -8,6 +8,6 @@ fn main() {
     let mut local = 5;
     let raw_pointer = &mut local as *mut i32;
     let result = unsafe { example1(&mut *raw_pointer, &mut *raw_pointer) };
-    println!(" {} ", result); // Prints "13".
+    //println!(" {} ", result); // Prints "13".
     // result += 1;
 }

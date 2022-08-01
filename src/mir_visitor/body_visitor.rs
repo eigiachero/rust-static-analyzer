@@ -60,6 +60,12 @@ impl<'tcx> MirVisitor<'tcx> {
     ) {
         let _ty = local_decl.ty;
         let _mutability = local_decl.mutability;
+
+        if self.args.is_empty() { // Create unknown args
+            self.stacked_borrows.new_ref(Tag::Tagged(local.as_u32()), Permission::Unique);
+            self.alias_graph.constant(local.as_u32());
+        }
+
         println!("Declaration {:?} {:?}: {:?}", _mutability, local, _ty);
     }
 }
