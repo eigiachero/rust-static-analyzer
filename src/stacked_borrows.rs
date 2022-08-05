@@ -107,6 +107,17 @@ impl Stack {
         }
         println!("ERROR Tag {:?} does not have READ access ERROR", tag);
     }
+
+    pub fn is_live(&self, tag: Tag) -> bool {
+        let mut result = false;
+        for item in &self.borrows {
+            if item.tag == tag {
+                result = true;
+                break;
+            }
+        }
+        result
+    }
 }
 
 impl StackItem {

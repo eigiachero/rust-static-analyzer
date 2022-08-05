@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::visit::{Dfs, EdgeRef};
 
@@ -78,6 +77,20 @@ impl PointsToGraph {
 
         // Else return false
         false
+    }
+
+    pub fn aliasing_test(&self) -> Vec<usize> {
+        let mut result = Vec::new();
+        for index in self.graph.node_indices() {
+            let outgoing_edges = self.graph.neighbors(index).count();
+            let incoming_edges = self.graph.neighbors_undirected(index).count() - outgoing_edges;
+            if incoming_edges >= 2 {
+                let variable = index.index();
+                println!("Variable {:#?} may have aliasing", variable);
+                result.push(variable);
+            }
+        }
+        result
     }
 
     pub fn extend(&mut self, graph: Graph::<u32,()>, args_ref: HashMap<u32, u32>) {

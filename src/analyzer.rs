@@ -1,4 +1,4 @@
-use crate::mir_visitor::body_visitor::MirVisitor;
+use crate::{mir_visitor::body_visitor::MirVisitor, stacked_borrows::Tag};
 use petgraph::dot::{Config, Dot};
 use rustc_middle::ty::TyCtxt;
 
@@ -29,6 +29,13 @@ pub fn analyze<'tcx>(tcx: TyCtxt, main_function_name: Option<String>) {
         let function_body = tcx.optimized_mir(entry_fn_id);
         let mut visitor = MirVisitor::new(tcx, &function_body, Vec::new());
         visitor.visit_body(function_body);
+
+        let alias_vec = visitor.alias_graph.aliasing_test();
+        for may_alias_var in alias_vec {
+            if !visitor.stacked_borrows.is_live(Tag::Tagged(may_alias_var as u32)) {
+                println!("Variable {} could be dead", may_alias_var);
+            }
+        }
 
         println!(
             "{:?}",

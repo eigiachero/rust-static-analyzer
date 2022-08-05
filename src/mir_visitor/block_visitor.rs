@@ -6,6 +6,7 @@ use rustc_middle::mir::Rvalue::{*};
 use rustc_middle::mir::BorrowKind;
 use rustc_middle::mir::ConstantKind;
 use rustc_target::abi::VariantIdx;
+use rustc_middle::ty::{ParamEnv, ParamEnvAnd, TyKind};
 
 use crate::stacked_borrows::{*};
 use super::body_visitor::MirVisitor;
@@ -118,8 +119,37 @@ impl<'tcx> MirVisitor<'tcx> {
                 self.add_to_stack(place, tag);
                 self.alias_graph.constant(variable);
             },
-            Cast(_cast_kind, operand, _ty) => {
+            // Check cast kind equals type - Same size of T - raw pointers
+            Cast(_cast_kind, operand, ty) => {
                 print!("kst ");
+
+                let mut operand_ty = operand.ty(&self.local_declarations,self.tcx);
+                let mut cast_type = *ty;
+
+                if let TyKind::RawPtr(type_and_mut) = operand_ty.kind() {
+                    operand_ty = type_and_mut.ty;
+                }
+
+                if let TyKind::RawPtr(type_and_mut) = cast_type.kind() {
+                    cast_type = type_and_mut.ty;
+                }
+
+                if operand_ty.is_trivially_sized(self.tcx) && cast_type.is_trivially_sized(self.tcx) {
+                    let operand_query = ParamEnvAnd { param_env: ParamEnv::empty(), value: operand_ty };
+                    let ty_query = ParamEnvAnd { param_env: ParamEnv::empty(), value: cast_type };
+
+                    match (self.tcx.layout_of(operand_query), self.tcx.layout_of(ty_query)) {
+                        (Ok(operand_layout), Ok(cast_layout)) => {
+                            if operand_layout.size > cast_layout.size {
+                                println!("WARNING: Casting from a layout with {} bits to {} bits", operand_layout.size.bytes(), cast_layout.size.bytes());
+                                println!("from {:#?} to {:#?}", operand.ty(&self.local_declarations,self.tcx), ty);
+                            }
+                        },
+                        other => println!("Error while calculating cast type sizes"),
+                    }
+
+                }
+
                 self.visit_operand(operand, location);
                 self.add_to_stack(place, tag);
                 self.alias_graph.constant(variable);
