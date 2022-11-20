@@ -18,7 +18,7 @@ impl<'tcx> MirVisitor<'tcx> {
         block: BasicBlock,
         data: &BasicBlockData<'tcx>
     ) {
-        println!("Block {:#?} --Start", block);
+        println!("Block {:#?} --Start\n", block);
         let mut location = block.start_location();
         // Visit each statement of the basic block
         for statement in &data.statements {
@@ -30,7 +30,7 @@ impl<'tcx> MirVisitor<'tcx> {
         if let Some(terminator) = &data.terminator {
             self.visit_terminator(terminator, location);
         }
-        println!("Block {:#?} --End \n", block);
+        println!("\nBlock {:#?} --End \n", block);
     }
 
     fn visit_statement(
@@ -189,7 +189,8 @@ impl<'tcx> MirVisitor<'tcx> {
             other => println!("Rvalue kind not recognized {:?} ", other),
         }
 
-        println!("{:#?} Assign {:?} = {:?} | {:#?}", location, place, rvalue, self.stacked_borrows);
+        //println!("{:#?} Assign {:?} = {:?} | {:#?}", location, place, rvalue, self.stacked_borrows);
+        println!("{:#?} Assign {:?} = {:?}", location, place, rvalue);
     }
 
     pub fn visit_operand(

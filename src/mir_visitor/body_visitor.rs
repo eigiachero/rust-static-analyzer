@@ -1,6 +1,10 @@
+use std::fmt::write;
+
+use petgraph::visit::EdgeRef;
 use rustc_middle::mir::{Local, LocalDecl, LocalDecls, Body};
 use rustc_middle::mir::Operand;
 use rustc_middle::ty::{TyCtxt};
+use std::fmt::Write as FmtWrite;
 
 use crate::stacked_borrows::{*};
 use crate::points_to::PointsToGraph;
@@ -31,24 +35,30 @@ impl<'tcx> MirVisitor<'tcx> {
 // Visitor trait implementation
 impl<'tcx> MirVisitor<'tcx> {
     pub fn visit_body(&mut self, body: &Body<'tcx>) {
-        println!("Main body -- Start");
+        // Get function name
+        let mut out = String::new();
+        write!(&mut out, "{:?}", body.source.instance.def_id()).unwrap();
+        let mut name: String = String::from(out.split("::").collect::<Vec<&str>>()[1]);
+        name = name[0..1].to_uppercase() + &name[1..name.len()-1];
+
+        println!("\n{} body -- Start\n", name);
         // Visit local declarations
         let local_declarations = body.local_decls.clone();
         for (local, local_decl) in local_declarations.into_iter_enumerated() {
             self.visit_local_decl(local, &local_decl);
         }
+        //println!("{:?}",body.var_debug_info);
 
         // Visit arguments and local declarations
         self.push_args();
         self.local_declarations = body.local_decls.clone();
-        println!("\n");
 
         // Visit function basic blocks
         let basic_blocks = body.basic_blocks().clone();
         for (block, data) in basic_blocks.into_iter_enumerated() {
             self.visit_basic_block_data(block, &data);
         }
-        println!("Main body -- End");
+        println!("{} body -- End", name);
     }
 
     // Function Declarations
@@ -66,6 +76,6 @@ impl<'tcx> MirVisitor<'tcx> {
             self.alias_graph.constant(local.as_u32());
         }
 
-        println!("Declaration {:?} {:?}: {:?}", _mutability, local, _ty);
+        //println!("Declaration {:?} {:?}: {:?}\n", _mutability, local, _ty);
     }
 }

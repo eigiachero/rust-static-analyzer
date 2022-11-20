@@ -1,0 +1,40 @@
+\documentclass{report}
+
+\usepackage[spanish]{babel}
+\usepackage[a4paper,top=2cm,bottom=3cm,left=2cm,right=2cm,marginparwidth=1.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{import}
+\usepackage{blindtext}
+\usepackage{parskip}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=magenta,
+    urlcolor=blue,
+}
+
+\import{.}{rust-syntax.tex}
+
+\title{Rust Static Analyzer}
+\author{Ezequiel Giachero}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\import{.}{capitulo-1.tex} %Introducción
+\import{.}{capitulo-2.tex} %Sistema de tipos de Rust
+\import{.}{capitulo-3.tex} %Extendiendo el borrow checker
+\import{.}{capitulo-4.tex} %La herramienta: diseño e implementación
+\import{.}{capitulo-5.tex} %Resultados obtenidos y trabajos futuros
+
+
+\nocite{*}
+\bibliographystyle{unsrt}
+\bibliography{bibliografia}
+
+\end{document}

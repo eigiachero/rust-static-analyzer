@@ -86,7 +86,7 @@ impl Stack {
                     }
                 }
                 None => {
-                    println!("ERROR Tag {:?} does not have write access ERROR", tag);
+                    println!("ERROR Tag {:?} does not have WRITE access", tag);
                     break;
                 }
 
@@ -105,7 +105,7 @@ impl Stack {
             }
             index += 0;
         }
-        println!("ERROR Tag {:?} does not have READ access ERROR", tag);
+        println!("ERROR Tag {:?} does not have READ access", tag);
     }
 
     pub fn is_live(&self, tag: Tag) -> bool {
