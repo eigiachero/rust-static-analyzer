@@ -32,14 +32,21 @@ pub fn analyze<'tcx>(tcx: TyCtxt, main_function_name: Option<String>) {
 
         let alias_vec = visitor.alias_graph.aliasing_test();
         for may_alias_var in alias_vec {
+            let var_name = visitor.get_variable_name(may_alias_var as u32);
+            println!("Variable {} may have aliasing", var_name);
             if !visitor.stacked_borrows.is_live(Tag::Tagged(may_alias_var as u32)) {
-                println!("Variable {} could be dead", may_alias_var);
+                println!("Variable {} could be dead", var_name);
             }
         }
 
         println!(
             "{:?}",
-            Dot::with_config(&visitor.alias_graph.graph, &[Config::EdgeNoLabel])
+            Dot::with_attr_getters(
+                &visitor.alias_graph.graph,
+                &[Config::EdgeNoLabel,Config::NodeNoLabel],
+                &|_, er| String::new(),
+                &|_, (index, refer)| format!("label = \"{}\"", visitor.get_variable_name(*refer)),
+            )
         );
     }
 }

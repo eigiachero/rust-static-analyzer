@@ -18,7 +18,7 @@ impl<'tcx> MirVisitor<'tcx> {
         block: BasicBlock,
         data: &BasicBlockData<'tcx>
     ) {
-        println!("Block {:#?} --Start\n", block);
+        println!("Block {} {:#?} --Start\n", self.func_name, block);
         let mut location = block.start_location();
         // Visit each statement of the basic block
         for statement in &data.statements {
@@ -30,7 +30,7 @@ impl<'tcx> MirVisitor<'tcx> {
         if let Some(terminator) = &data.terminator {
             self.visit_terminator(terminator, location);
         }
-        println!("\nBlock {:#?} --End \n", block);
+        println!("\nBlock {} {:#?} --End \n", self.func_name, block);
     }
 
     fn visit_statement(
@@ -74,6 +74,9 @@ impl<'tcx> MirVisitor<'tcx> {
     ) {
         let variable = place.local.as_u32();
         let tag = self.place_to_tag(place);
+        let variable_name = self.get_variable_name(variable);
+        let mut operand_name = String::new();
+
 
         match rvalue {
             // Create or mutate variable (x or *x)
@@ -85,8 +88,14 @@ impl<'tcx> MirVisitor<'tcx> {
                     self.alias_graph.constant(variable);
                 }
                 if let Operand::Move(_) = operand {
-                    self.alias_graph.points_to(variable, self.operand_as_u32(operand));
+                    let operand_u32 = self.operand_as_u32(operand);
+                    self.alias_graph.points_to(variable, operand_u32);
+                    operand_name = format!("ref {}", self.get_variable_name(operand_u32));
                 }
+                if let Operand::Copy(_) = operand {
+                    operand_name = format!("ref {}", self.get_variable_name(self.operand_as_u32(operand)));
+                }
+
             },
             // Reference (&x or &mut x)
             Ref(_region, borrow_kind, place) => {
@@ -102,6 +111,7 @@ impl<'tcx> MirVisitor<'tcx> {
                     }
                 };
                 self.alias_graph.points_to(variable, place.local.as_u32());
+                operand_name = format!("ref {}", self.get_variable_name(place.local.as_u32()));
             },
             // Create a raw pointer (&raw const x)
             AddressOf(_mutability, place) => {
@@ -109,6 +119,7 @@ impl<'tcx> MirVisitor<'tcx> {
                 self.stacked_borrows.use_value(self.place_to_tag(place));
                 self.stacked_borrows.new_ref(tag, Permission::SharedReadWrite);
                 self.alias_graph.points_to(variable, place.local.as_u32());
+                operand_name = format!("ref {}", self.get_variable_name(place.local.as_u32()));
             }
             // Creates an aggregate value, like a tuple or struct
             Aggregate(_kind,operands) => {
@@ -153,6 +164,7 @@ impl<'tcx> MirVisitor<'tcx> {
                 self.visit_operand(operand, location);
                 self.add_to_stack(place, tag);
                 self.alias_graph.constant(variable);
+                operand_name = format!("ref {}", self.get_variable_name(self.operand_as_u32(operand)));
             },
             BinaryOp(_op, box_tuple) | CheckedBinaryOp(_op, box_tuple) => {
                 print!("bin ");
@@ -190,7 +202,7 @@ impl<'tcx> MirVisitor<'tcx> {
         }
 
         //println!("{:#?} Assign {:?} = {:?} | {:#?}", location, place, rvalue, self.stacked_borrows);
-        println!("{:#?} Assign {:?} = {:?}", location, place, rvalue);
+        println!("{:#?} Assign {} = {:?} {}", location, variable_name, rvalue, operand_name);
     }
 
     pub fn visit_operand(

@@ -131,8 +131,26 @@ Block bb0 --End
 Main body -- End
 \end{lstlisting}
 
+\section{Points to alias analysis}
 
+\begin{lstlisting}[
+    language=rust,
+    label=code:interprocedural
+    caption={Ejemplo de un programa el cual le aplicamos analisis de alias points to interprocedural}
+]
+fn example(arg: &mut u32) -> u32 {
+    let local = arg;
+    *local = 15;
+    1
+}
 
+fn main() {
+    let mut id = 5;
+    let arg = &mut id;
+    let _pointer = &arg;
+    let _result = example(arg);
+}
+\end{lstlisting}
 
 
 

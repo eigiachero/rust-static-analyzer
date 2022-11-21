@@ -1,6 +1,7 @@
-use rustc_middle::mir::{Place};
+use rustc_middle::mir::{Place, Body};
 use rustc_middle::mir::Operand;
 use rustc_middle::mir::Mutability::Mut;
+use std::fmt::Write as FmtWrite;
 
 // use crate::utils::print_mir;
 use crate::stacked_borrows::{*};
@@ -50,5 +51,22 @@ impl<'tcx> MirVisitor<'tcx> {
                 0
             }
         }
+    }
+
+    pub fn get_variable_name(&self, place: u32) -> String {
+        let name = match self.variable_names.get(&place) {
+            Some(name) => String::from(*name),
+            None => place.to_string()
+
+        };
+        name
+    }
+
+    pub fn get_body_func_name(body: &Body) -> String {
+        let mut out = String::new();
+        write!(&mut out, "{:?}", body.source.instance.def_id()).unwrap();
+        let mut name: String = String::from(out.split("::").collect::<Vec<&str>>()[1]);
+        name = name[0..1].to_uppercase() + &name[1..name.len()-1];
+        name
     }
 }

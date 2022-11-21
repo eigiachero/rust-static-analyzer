@@ -1,10 +1,8 @@
-use std::fmt::write;
+use std::collections::HashMap;
 
-use petgraph::visit::EdgeRef;
 use rustc_middle::mir::{Local, LocalDecl, LocalDecls, Body};
-use rustc_middle::mir::Operand;
+use rustc_middle::mir::{Operand, VarDebugInfoContents};
 use rustc_middle::ty::{TyCtxt};
-use std::fmt::Write as FmtWrite;
 
 use crate::stacked_borrows::{*};
 use crate::points_to::PointsToGraph;
@@ -13,7 +11,9 @@ pub struct MirVisitor<'tcx> {
     pub tcx: TyCtxt<'tcx>,
     pub body: &'tcx Body<'tcx>,
     pub args: Vec<Operand<'tcx>>,
+    pub func_name: String,
     pub local_declarations: LocalDecls<'tcx>,
+    pub variable_names: HashMap<u32, &'tcx str>,
     pub stacked_borrows: Stack,
     pub alias_graph: PointsToGraph,
 }
@@ -25,7 +25,9 @@ impl<'tcx> MirVisitor<'tcx> {
             tcx,
             body,
             args,
+            func_name: String::new(),
             local_declarations: LocalDecls::new(),
+            variable_names: HashMap::new(),
             stacked_borrows: Stack::new(),
             alias_graph: PointsToGraph::new()
         }
@@ -35,19 +37,15 @@ impl<'tcx> MirVisitor<'tcx> {
 // Visitor trait implementation
 impl<'tcx> MirVisitor<'tcx> {
     pub fn visit_body(&mut self, body: &Body<'tcx>) {
-        // Get function name
-        let mut out = String::new();
-        write!(&mut out, "{:?}", body.source.instance.def_id()).unwrap();
-        let mut name: String = String::from(out.split("::").collect::<Vec<&str>>()[1]);
-        name = name[0..1].to_uppercase() + &name[1..name.len()-1];
+        let name = MirVisitor::<'tcx>::get_body_func_name(body);
+        self.func_name = name;
+        println!("\n{} body -- Start\n", self.func_name);
 
-        println!("\n{} body -- Start\n", name);
         // Visit local declarations
         let local_declarations = body.local_decls.clone();
         for (local, local_decl) in local_declarations.into_iter_enumerated() {
             self.visit_local_decl(local, &local_decl);
         }
-        //println!("{:?}",body.var_debug_info);
 
         // Visit arguments and local declarations
         self.push_args();
@@ -58,7 +56,7 @@ impl<'tcx> MirVisitor<'tcx> {
         for (block, data) in basic_blocks.into_iter_enumerated() {
             self.visit_basic_block_data(block, &data);
         }
-        println!("{} body -- End", name);
+        println!("{} body -- End", self.func_name);
     }
 
     // Function Declarations
@@ -70,6 +68,12 @@ impl<'tcx> MirVisitor<'tcx> {
     ) {
         let _ty = local_decl.ty;
         let _mutability = local_decl.mutability;
+
+        for variable in &self.body.var_debug_info { // Create a hashmap with variable real names
+            if let VarDebugInfoContents::Place(val) = variable.value {
+                self.variable_names.insert(val.local.as_u32(), variable.name.as_str());
+            }
+        }
 
         if self.args.is_empty() { // Create unknown args
             self.stacked_borrows.new_ref(Tag::Tagged(local.as_u32()), Permission::Unique);

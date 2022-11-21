@@ -28,8 +28,15 @@ impl<'tcx> MirVisitor<'tcx> {
                 destination,
                 ..
             } => {
+                if let Some((place, _)) = destination {
+                    println!("\twhere {:#?} is {}", place, self.get_variable_name(place.local.as_u32()));
+                }
+                for arg in &args {
+                    let var = self.operand_as_u32(arg);
+                    print!("\tand _{:?} is {} ", var, self.get_variable_name(var));
+                }
 
-                println!("call {:#?}", &func);
+                println!("\ncall {:#?}", &func);
                 // To-do: analyze function profile, may-alias
 
                 // Visit arg
@@ -63,7 +70,15 @@ impl<'tcx> MirVisitor<'tcx> {
                                 let mut visitor = MirVisitor::new(self.tcx, body, args);
                                 visitor.visit_body(body);
 
-                                println!("{:?}", Dot::with_config(&visitor.alias_graph.graph, &[Config::EdgeNoLabel]));
+                                println!(
+                                    "{:?}",
+                                    Dot::with_attr_getters(
+                                        &visitor.alias_graph.graph,
+                                        &[Config::EdgeNoLabel,Config::NodeNoLabel],
+                                        &|_, er| String::new(),
+                                        &|_, (index, refer)| format!("label = \"{}\"", visitor.get_variable_name(*refer)),
+                                    )
+                                );
                                 // self.alias_graph.extend(visitor.alias_graph.graph, arg_refs);
                             }
                         }

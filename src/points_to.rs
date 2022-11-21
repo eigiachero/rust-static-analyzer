@@ -86,7 +86,7 @@ impl PointsToGraph {
             let incoming_edges = self.graph.neighbors_undirected(index).count() - outgoing_edges;
             if incoming_edges >= 2 {
                 let variable = index.index();
-                println!("Variable {:#?} may have aliasing", variable);
+                //println!("Variable {:#?} may have aliasing", variable);
                 result.push(variable);
             }
         }
@@ -114,5 +114,6 @@ impl PointsToGraph {
             self.graph.add_edge(a, b, ());
         }
     }
+
 
 }
