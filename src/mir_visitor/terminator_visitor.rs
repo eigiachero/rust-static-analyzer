@@ -19,7 +19,7 @@ impl<'tcx> MirVisitor<'tcx> {
         terminator: &Terminator<'tcx>,
         location: Location
     ) {
-        //println!("{:#?} Terminator {:#?} | {:#?}", location, terminator.kind, self.stacked_borrows);
+        // println!("{:#?} Terminator {:#?} | {:#?}", location, terminator.kind, self.stacked_borrows);
         println!("{:#?} Terminator {:#?}", location, terminator.kind);
         match terminator.kind.clone() {
             TerminatorKind::Call {
@@ -28,6 +28,7 @@ impl<'tcx> MirVisitor<'tcx> {
                 destination,
                 ..
             } => {
+                //Get function return variable and argument names
                 if let Some((place, _)) = destination {
                     println!("\twhere {:#?} is {}", place, self.get_variable_name(place.local.as_u32()));
                 }
@@ -42,8 +43,8 @@ impl<'tcx> MirVisitor<'tcx> {
                 // Visit arg
                 let mut index = 1;
                 let mut arg_refs: HashMap<u32, u32> = HashMap::new();
-                for arg in &args {
-                    self.visit_operand(arg, location);
+                for arg in (&args).iter().rev() {
+                    // self.visit_operand(arg, location);
                     arg_refs.insert(index, self.operand_as_u32(arg));
                     index+=1;
                 }

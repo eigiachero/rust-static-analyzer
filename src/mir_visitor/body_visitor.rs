@@ -13,7 +13,7 @@ pub struct MirVisitor<'tcx> {
     pub args: Vec<Operand<'tcx>>,
     pub func_name: String,
     pub local_declarations: LocalDecls<'tcx>,
-    pub variable_names: HashMap<u32, &'tcx str>,
+    pub variable_names: HashMap<u32, String>,
     pub stacked_borrows: Stack,
     pub alias_graph: PointsToGraph,
 }
@@ -47,6 +47,14 @@ impl<'tcx> MirVisitor<'tcx> {
             self.visit_local_decl(local, &local_decl);
         }
 
+        // Create a hashmap with variable real names
+        for variable in &self.body.var_debug_info {
+            if let VarDebugInfoContents::Place(val) = variable.value {
+                self.variable_names.insert(val.local.as_u32(), String::from(variable.name.as_str()));
+            }
+        }
+        self.stacked_borrows.names = self.variable_names.clone();
+
         // Visit arguments and local declarations
         self.push_args();
         self.local_declarations = body.local_decls.clone();
@@ -68,17 +76,6 @@ impl<'tcx> MirVisitor<'tcx> {
     ) {
         let _ty = local_decl.ty;
         let _mutability = local_decl.mutability;
-
-        for variable in &self.body.var_debug_info { // Create a hashmap with variable real names
-            if let VarDebugInfoContents::Place(val) = variable.value {
-                self.variable_names.insert(val.local.as_u32(), variable.name.as_str());
-            }
-        }
-
-        if self.args.is_empty() { // Create unknown args
-            self.stacked_borrows.new_ref(Tag::Tagged(local.as_u32()), Permission::Unique);
-            self.alias_graph.constant(local.as_u32());
-        }
 
         //println!("Declaration {:?} {:?}: {:?}\n", _mutability, local, _ty);
     }

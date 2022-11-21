@@ -1,7 +1,8 @@
-use std::{fmt, collections::VecDeque};
+use std::{fmt, collections::{VecDeque, HashMap}};
 
 pub struct Stack {
-    borrows: VecDeque<StackItem>
+    borrows: VecDeque<StackItem>,
+    pub names: HashMap<u32, String>,
 }
 
 impl fmt::Debug for Stack {
@@ -59,7 +60,7 @@ pub type PtrId = u32;
 
 impl Stack {
     pub fn new() -> Stack {
-        Stack { borrows: VecDeque::new() }
+        Stack { borrows: VecDeque::new(), names: HashMap::new() }
     }
 
     pub fn clean(&mut self) {
@@ -86,7 +87,7 @@ impl Stack {
                     }
                 }
                 None => {
-                    println!("ERROR Tag {:?} does not have WRITE access", tag);
+                    println!("ERROR Tag {:?} does not have WRITE access", self.get_tag_name(tag));
                     break;
                 }
 
@@ -105,7 +106,7 @@ impl Stack {
             }
             index += 0;
         }
-        println!("ERROR Tag {:?} does not have READ access", tag);
+        println!("ERROR Tag {:?} does not have READ access", self.get_tag_name(tag));
     }
 
     pub fn is_live(&self, tag: Tag) -> bool {
@@ -117,6 +118,16 @@ impl Stack {
             }
         }
         result
+    }
+
+    pub fn get_tag_name(&self, tag: Tag) -> String {
+        let mut name = format!("{:?}", tag);
+        if let Tag::Tagged(id) = tag {
+            if let Some(x) = self.names.get(&id){
+                name = x.clone();
+            }
+        }
+        name
     }
 }
 

@@ -14,10 +14,18 @@ impl<'tcx> MirVisitor<'tcx> {
     }
 
     pub fn add_to_stack(&mut self, place: &Place, tag: Tag) {
-        if !place.is_indirect() { // is not a (*x)
+        if !place.is_indirect() { // is not a (&x)
             self.stacked_borrows.new_ref(tag, Permission::Unique);
         }
         self.stacked_borrows.use_value(tag);
+    }
+
+    pub fn use_or_read(&mut self, place: &Place) {
+        if place.is_indirect() { // is not a (&x)
+            self.stacked_borrows.read_value(self.place_to_tag(place));
+        } else {
+            self.stacked_borrows.use_value(self.place_to_tag(place));
+        }
     }
 
     pub fn push_args(&mut self) {
@@ -53,9 +61,10 @@ impl<'tcx> MirVisitor<'tcx> {
         }
     }
 
+    // Debugger help functions
     pub fn get_variable_name(&self, place: u32) -> String {
         let name = match self.variable_names.get(&place) {
-            Some(name) => String::from(*name),
+            Some(name) => name.clone(),
             None => place.to_string()
 
         };

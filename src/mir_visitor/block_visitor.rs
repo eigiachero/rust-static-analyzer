@@ -84,7 +84,7 @@ impl<'tcx> MirVisitor<'tcx> {
                 print!("use ");
                 self.visit_operand(operand, location);
                 self.add_to_stack(place, tag);
-                if !place.is_indirect() { // is not a (*x)
+                if !place.is_indirect() { // is not a (&x)
                     self.alias_graph.constant(variable);
                 }
                 if let Operand::Move(_) = operand {
@@ -116,7 +116,7 @@ impl<'tcx> MirVisitor<'tcx> {
             // Create a raw pointer (&raw const x)
             AddressOf(_mutability, place) => {
                 print!("raw ");
-                self.stacked_borrows.use_value(self.place_to_tag(place));
+                self.use_or_read(place);
                 self.stacked_borrows.new_ref(tag, Permission::SharedReadWrite);
                 self.alias_graph.points_to(variable, place.local.as_u32());
                 operand_name = format!("ref {}", self.get_variable_name(place.local.as_u32()));
@@ -201,7 +201,7 @@ impl<'tcx> MirVisitor<'tcx> {
             other => println!("Rvalue kind not recognized {:?} ", other),
         }
 
-        //println!("{:#?} Assign {:?} = {:?} | {:#?}", location, place, rvalue, self.stacked_borrows);
+        // println!("{:#?} Assign {} = {:?} {} | {:#?}", location, variable_name, rvalue, operand_name, self.stacked_borrows);
         println!("{:#?} Assign {} = {:?} {}", location, variable_name, rvalue, operand_name);
     }
 
@@ -212,9 +212,7 @@ impl<'tcx> MirVisitor<'tcx> {
     ) {
         match operand {
             Operand::Move(place) | Operand::Copy(place) => {
-                if !place.projection.is_empty() {
-                    self.stacked_borrows.use_value(self.place_to_tag(place));
-                }
+               self.use_or_read(place);
             }
             Operand::Constant(boxed_constant) => {
                 let constant = *boxed_constant.clone();
