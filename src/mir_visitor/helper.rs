@@ -13,19 +13,24 @@ impl<'tcx> MirVisitor<'tcx> {
         Tag::Tagged(place.local.as_u32())
     }
 
-    pub fn add_to_stack(&mut self, place: &Place, tag: Tag) {
+    pub fn add_to_stack(&mut self, place: &Place) {
+        let tag = self.place_to_tag(place);
         if !place.is_indirect() { // is not a (&x)
-            self.stacked_borrows.new_ref(tag, Permission::Unique);
+            let variable_decl = self.local_declarations.get(place.local).unwrap();
+            let is_mutable = variable_decl.mutability == Mut;
+            let is_mut_ref = variable_decl.ty.is_mutable_ptr();
+            if is_mutable || is_mut_ref {
+                self.stacked_borrows.new_ref(tag, Permission::Unique);
+            } else {
+                self.stacked_borrows.new_ref(tag, Permission::SharedReadOnly);
+            }
         }
         self.stacked_borrows.use_value(tag);
     }
 
-    pub fn use_or_read(&mut self, place: &Place) {
-        if place.is_indirect() { // is not a (&x)
-            self.stacked_borrows.read_value(self.place_to_tag(place));
-        } else {
-            self.stacked_borrows.use_value(self.place_to_tag(place));
-        }
+    pub fn is_raw_ptr(&self, place: &Place) -> bool {
+        let variable_decl = self.local_declarations.get(place.local).unwrap();
+        variable_decl.ty.is_unsafe_ptr()
     }
 
     pub fn push_args(&mut self) {

@@ -41,12 +41,6 @@ impl<'tcx> MirVisitor<'tcx> {
         self.func_name = name;
         println!("\n{} body -- Start\n", self.func_name);
 
-        // Visit local declarations
-        let local_declarations = body.local_decls.clone();
-        for (local, local_decl) in local_declarations.into_iter_enumerated() {
-            self.visit_local_decl(local, &local_decl);
-        }
-
         // Create a hashmap with variable real names
         for variable in &self.body.var_debug_info {
             if let VarDebugInfoContents::Place(val) = variable.value {
@@ -54,6 +48,13 @@ impl<'tcx> MirVisitor<'tcx> {
             }
         }
         self.stacked_borrows.names = self.variable_names.clone();
+
+        // Visit local declarations
+        let local_declarations = body.local_decls.clone();
+        for (local, local_decl) in local_declarations.into_iter_enumerated() {
+            self.visit_local_decl(local, &local_decl);
+        }
+
 
         // Visit arguments and local declarations
         self.push_args();
@@ -77,6 +78,6 @@ impl<'tcx> MirVisitor<'tcx> {
         let _ty = local_decl.ty;
         let _mutability = local_decl.mutability;
 
-        //println!("Declaration {:?} {:?}: {:?}\n", _mutability, local, _ty);
+        // println!("Declaration {:?} {}: {:?}", _mutability, self.get_variable_name(local.as_u32()), _ty);
     }
 }

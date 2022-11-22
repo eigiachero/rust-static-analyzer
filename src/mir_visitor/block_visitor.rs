@@ -63,7 +63,7 @@ impl<'tcx> MirVisitor<'tcx> {
         place: &Place<'tcx>,
         variant_index: VariantIdx,
     ) {
-        self.add_to_stack(place, self.place_to_tag(place));
+        self.add_to_stack(place);
     }
 
     fn visit_assign(
@@ -83,7 +83,7 @@ impl<'tcx> MirVisitor<'tcx> {
             Use(operand) => {
                 print!("use ");
                 self.visit_operand(operand, location);
-                self.add_to_stack(place, tag);
+                self.add_to_stack(place);
                 if !place.is_indirect() { // is not a (&x)
                     self.alias_graph.constant(variable);
                 }
@@ -101,9 +101,16 @@ impl<'tcx> MirVisitor<'tcx> {
             Ref(_region, borrow_kind, place) => {
                 print!("ref ");
                 match borrow_kind {
-                    BorrowKind::Shared => { // Inmutable reference
+                    BorrowKind::Shared | BorrowKind::Shallow => { // Inmutable reference
                         self.stacked_borrows.read_value(self.place_to_tag(place));
                         self.stacked_borrows.new_ref(tag, Permission::SharedReadOnly);
+                    }
+                    BorrowKind::Mut {allow_two_phase_borrow} => {  // Mutable reference
+                        match allow_two_phase_borrow {
+                            true => {self.stacked_borrows.use_value(self.place_to_tag(place));}
+                            false => {self.stacked_borrows.read_value(self.place_to_tag(place));}
+                        }
+                        self.stacked_borrows.new_ref(tag, Permission::Unique);
                     }
                     _ => {  // Mutable reference
                         self.stacked_borrows.use_value(self.place_to_tag(place));
@@ -116,7 +123,7 @@ impl<'tcx> MirVisitor<'tcx> {
             // Create a raw pointer (&raw const x)
             AddressOf(_mutability, place) => {
                 print!("raw ");
-                self.use_or_read(place);
+                self.stacked_borrows.use_value(self.place_to_tag(place));
                 self.stacked_borrows.new_ref(tag, Permission::SharedReadWrite);
                 self.alias_graph.points_to(variable, place.local.as_u32());
                 operand_name = format!("ref {}", self.get_variable_name(place.local.as_u32()));
@@ -127,7 +134,7 @@ impl<'tcx> MirVisitor<'tcx> {
                 for operand in operands {
                     self.visit_operand(operand, location);
                 }
-                self.add_to_stack(place, tag);
+                self.add_to_stack(place);
                 self.alias_graph.constant(variable);
             },
             // Check cast kind equals type - Same size of T - raw pointers
@@ -162,39 +169,39 @@ impl<'tcx> MirVisitor<'tcx> {
                 }
 
                 self.visit_operand(operand, location);
-                self.add_to_stack(place, tag);
+                self.add_to_stack(place);
                 self.alias_graph.constant(variable);
                 operand_name = format!("ref {}", self.get_variable_name(self.operand_as_u32(operand)));
             },
             BinaryOp(_op, box_tuple) | CheckedBinaryOp(_op, box_tuple) => {
                 print!("bin ");
                 let (operand1, operand2) = *box_tuple.clone();
-                self.visit_operand(&operand1, location);
                 self.visit_operand(&operand2, location);
-                self.add_to_stack(place, tag);
+                self.visit_operand(&operand1, location);
+                self.add_to_stack(place);
                 self.alias_graph.constant(variable);
 
             },
             UnaryOp(unary, operand) => {
                 print!("un  ");
                 self.visit_operand(&operand, location);
-                self.add_to_stack(place, tag);
+                self.add_to_stack(place);
                 self.alias_graph.constant(variable);
             },
             // SizeOf(T) - AlignOf(T)
             NullaryOp(_null_op, _operand) => {
                 print!("nul ");
-                self.add_to_stack(place, tag);
+                self.add_to_stack(place);
                 self.alias_graph.constant(variable);
             },
             ShallowInitBox(operand, _ty) => {
                 print!("box ");
-                self.add_to_stack(place, tag);
+                self.add_to_stack(place);
                 self.alias_graph.points_to(variable, self.operand_as_u32(operand));
             },
             Discriminant(_place) => {
                 print!("dsc ");
-                self.add_to_stack(place, tag);
+                self.add_to_stack(place);
                 self.alias_graph.constant(variable);
 
             }
@@ -211,8 +218,23 @@ impl<'tcx> MirVisitor<'tcx> {
         location: Location
     ) {
         match operand {
-            Operand::Move(place) | Operand::Copy(place) => {
-               self.use_or_read(place);
+            Operand::Move(place) => {
+                // println!("M");
+                if !place.is_indirect() { // is not a (&x)
+                    if self.is_raw_ptr(place) {
+                        self.stacked_borrows.use_raw(self.place_to_tag(place));
+                    } else {
+                        self.stacked_borrows.use_value(self.place_to_tag(place));
+                    }
+                }
+            }
+            Operand::Copy(place) => {
+                // println!("C");
+                if self.is_raw_ptr(place) {
+                    self.stacked_borrows.read_raw(self.place_to_tag(place));
+                } else {
+                    self.stacked_borrows.read_value(self.place_to_tag(place));
+                }
             }
             Operand::Constant(boxed_constant) => {
                 let constant = *boxed_constant.clone();

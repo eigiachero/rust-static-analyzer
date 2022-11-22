@@ -14,7 +14,7 @@ fn main() {
                                // This uses the raw pointer! (new-mutable-ref)
         )
     }; // Next: jump to example1 (line 17).
-    println!(" {} ", result); // Prints "13".
+    //println!(" {} ", result); // Prints "13".
 }
 fn example1(x: &mut i32, y: &mut i32) -> i32 {
     // x = Pointer(ℓ, 2), y = Pointer(ℓ, 3), h(ℓ) = (5, [Unique(0), Unique(1), SharedRW, Unique(3)])

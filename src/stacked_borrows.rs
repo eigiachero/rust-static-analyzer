@@ -95,6 +95,35 @@ impl Stack {
         }
     }
 
+    pub fn use_raw(&mut self, tag: Tag) {
+        if self.borrows.contains(&StackItem { tag, permission: Permission::SharedReadWrite }) {
+            loop  {
+                let last_item = self.borrows.pop_front();
+                match last_item {
+                    Some(item) => {
+                        if item.permission == Permission::SharedReadWrite {
+                            self.borrows.push_front(item);
+                            break;
+                        }
+                    }
+                    None => {
+                        println!("ERROR Tag {:?} does not have WRITE access", self.get_tag_name(tag));
+                        break;
+                    }
+
+                }
+            }
+        } else {
+            println!("ERROR Tag {:?} does not have WRITE access", self.get_tag_name(tag));
+        }
+    }
+
+    pub fn read_raw(&mut self, tag: Tag) {
+        if !self.borrows.contains(&StackItem { tag, permission: Permission::SharedReadWrite }) {
+            println!("ERROR Tag {:?} does not have WRITE access", self.get_tag_name(tag));
+        }
+    }
+
     pub fn read_value(&mut self, tag: Tag) {
         let mut index = 0;
         for item in self.borrows.clone().into_iter(){
