@@ -5,8 +5,8 @@
 \begin{lstlisting}[
     language=Rust,
     label=code:example1,
-    caption={Ejemplo1 mostrado en el paper Stacked Borrows \cite{stackedborrows}}
-    ]
+    caption={Ejemplo1 mostrado en el paper Stacked Borrows \citep{stackedborrows}}
+]
 fn main() {
     let mut local = 5;
     let raw_pointer = &mut local as *mut i32;
@@ -21,30 +21,12 @@ fn example1(x: &mut i32, y: &mut i32) -> i32 {
 }
 \end{lstlisting}
 
-Al comienzo de la función \textit{main()} podemos apreciar la declaración de una variable mutable(local) y un puntero raw(raw\_pointer)
-que hará referencia a la misma. Luego se invoca la función \textit{example1}, la cual toma como argumentos formales 2 referencias mutables,
-utilizando la referencia al puntero raw en ambos argumentos. Aquí es donde surgen los problemas. Primero, si bien no esta contemplado por
-Stacked Borrows, al llamar una función con más de una referencia mutable indica que la implementación del código puede no ser correcta.
-Y segundo, el problema que trata de atacar Stacked Borrows, es el grave problema de aliasing que surge cuando ambos argumentos tratan de
-modificar los valores de sus referencias, cuando están apuntando a una misma variable.
+Al comienzo de la función \textit{main()} podemos apreciar la declaración de una variable mutable(local) y un puntero raw(raw\_pointer) que hará referencia a la misma. Luego se invoca la función \textit{example1}, la cual toma como argumentos formales 2 referencias mutables, utilizando la referencia al puntero raw en ambos argumentos. Aquí es donde surgen los problemas. Primero, si bien no esta contemplado por Stacked Borrows, al llamar una función con más de una referencia mutable indica que la implementación del código puede no ser correcta. Y segundo, el problema que trata de atacar Stacked Borrows, es el grave problema de aliasing que surge cuando ambos argumentos tratan de modificar los valores de sus referencias, cuando están apuntando a una misma variable.
 
-Para resolver el primer problema, nuestra herramienta analiza la cabecera de las funciones que son llamadas. Mediante este análisis comprobamos que
-no existan dos o más referencias mutables apuntando a una misma variable a la hora de la invocación. Si los argumentos formales incluyen dos o más
-referencias mutables se muestra un mensaje "Caution" ya que puede llegar a generar problemas si no se toman las medidas de seguridad necesarias
-para la comprobación de los parámetros. Y en el caso de que existan dos o más referencias mutables que hacen referencia a una misma variable, es decir
-que exista aliasing, se muestra un mensaje de "Warning" porque es un gran indicativo de que pueden generarse errores debido a esto.
-Esto lo podemos apreciar en \href{run:../src/mir_visitor/terminator_visitor.rs}{terminator\_visitor.rs} entre las lineas 33-50
+Para resolver el primer problema, nuestra herramienta analiza la cabecera de las funciones que son llamadas. Mediante este análisis comprobamos que no existan dos o más referencias mutables apuntando a una misma variable a la hora de la invocación. Si los argumentos formales incluyen dos o más referencias mutables se muestra un mensaje ``Caution'' ya que puede llegar a generar problemas si no se toman las medidas de seguridad necesarias para la comprobación de los parámetros. Y en el caso de que existan dos o más referencias mutables que hacen referencia a una misma variable, es decir que exista aliasing, se muestra un mensaje de ``Warning'' porque es un gran indicativo de que pueden generarse errores debido a esto. Esto lo podemos apreciar en \href{run:../src/mir_visitor/terminator_visitor.rs}{terminator\_visitor.rs} entre las lineas 33-50.
 
-El segundo problema se resuelve mediante la implementación de Stacked Borrows. Generamos una pila donde iremos agregando las variables y referencias
-a medida que se van creando, y mortificándola cada vez que se produce una modificación a las mismas. Mediante esta pila simularemos el trabajo del
-borrow checker para determinar el tiempo de vida de las variables, extendiéndolo de tal manera que el análisis soporte tanto programas safe como unsafe.
-De esta manera, cada vez que la pila se modifica se realiza un chequeo para comprobar si existen referencias mutables X e Y tales que se encuentren
-ordenadas "XYXY" en la pila. Esto indicaría una violación de los principios de Stacked Borrows, y por lo tanto, se muestra un "Error". Estos errores
-pueden ser que la variable no tenia permisos para escribir o leer, dependiendo del caso.
-En el ejemplo, en la función \textit{example1()} podemos ver como romper el principio de la pila genera errores. Queremos retornar 42 en la variable X,
-pero como existe aliasing y se realiza una escritura de la forma "XYX", el valor a retornar es diferente. Por lo tanto existe un error ya que la variable
-Y no debería haber tenido permitido escribir. Una posible solución seria cambiar los accesos para que queden de forma "YXXY", de esta manera no se rompen
-los principios establecidos y el programa seria considerado correcto.
+El segundo problema se resuelve mediante la implementación de Stacked Borrows. Generamos una pila donde iremos agregando las variables y referencias a medida que se van creando, y mortificándola cada vez que se produce una modificación a las mismas. Mediante esta pila simularemos el trabajo del borrow checker para determinar el tiempo de vida de las variables, extendiéndolo de tal manera que el análisis soporte tanto programas safe como unsafe.
+De esta manera, cada vez que la pila se modifica se realiza un chequeo para comprobar si existen referencias mutables X e Y tales que se encuentren ordenadas ``XYXY'' en la pila. Esto indicaría una violación de los principios de Stacked Borrows, y por lo tanto, se muestra un ``Error''. Estos errores pueden ser que la variable no tenia permisos para escribir o leer, dependiendo del caso. En el ejemplo, en la función \textit{example1()} podemos ver como romper el principio de la pila genera errores. Queremos retornar 42 en la variable X, pero como existe aliasing y se realiza una escritura de la forma ``XYX'', el valor a retornar es diferente. Por lo tanto existe un error ya que la variable Y no debería haber tenido permitido escribir. Una posible solución seria cambiar los accesos para que queden de forma ``YXXY'', de esta manera no se rompen los principios establecidos y el programa seria considerado correcto.
 
 En el siguiente fragmento de la salida de nuestra herramienta podemos apreciar estos mensajes indicativos dentro de la información del MIR.
 
@@ -88,7 +70,7 @@ Example1 body -- End
     language=Rust,
     label=code:cast_example,
     caption={Ejemplo de casteo de una variable a otra con diferente representación.}
-    ]
+]
 pub fn main() {
     let mut one: u64 = 5;
     let raw = &mut one as *mut u64;
@@ -99,19 +81,10 @@ pub fn main() {
 }
 \end{lstlisting}
 
-En este ejemplo podemos apreciar como declaramos una variable llamada \textit{one}, que es del tipo u64 y tiene una representación en 8 bytes.
-Luego creamos dos punteros raw, donde el primero hace referencia a la primer variable manteniendo su representación de u64. Sin embargo,
-en el segundo puntero (raw2), se crea a partir de raw y utilizando como base el tipo u32, que tiene una representación de 4 bytes y es diferente.
-En la siguiente instrucción dentro del bloque unsafe hacemos uso del valor dentro de raw2 colocandolo dentro de una variable nueva llamada \textit{two}.\\
-Esto es un problema grave, ya que la nueva variable \textit{two} tiene dentro información que probablemente no sea correcta, ya que hicimos un casteo
-que no debería ser posible si utilizáramos unicamente referencias dentro de safe Rust. Estamos realizando una transformación de una variable u64
-a una u32 que tiene una representación no solo diferente, sino que 4bytes menor, de una manera insegura y el contenido probablemente sea inconsistente
-y produzca comportamiento indeseado en el programa.
+En este ejemplo podemos apreciar como declaramos una variable llamada \textit{one}, que es del tipo u64 y tiene una representación en 8 bytes. Luego creamos dos punteros raw, donde el primero hace referencia a la primer variable manteniendo su representación de u64. Sin embargo, en el segundo puntero (raw2), se crea a partir de raw y utilizando como base el tipo u32, que tiene una representación de 4 bytes y es diferente. En la siguiente instrucción dentro del bloque unsafe hacemos uso del valor dentro de raw2 colocandolo dentro de una variable nueva llamada \textit{two}.\\
+Esto es un problema grave, ya que la nueva variable \textit{two} tiene dentro información que probablemente no sea correcta, ya que hicimos un casteo que no debería ser posible si utilizáramos unicamente referencias dentro de safe Rust. Estamos realizando una transformación de una variable u64 a una u32 que tiene una representación no solo diferente, sino que 4bytes menor, de una manera insegura y el contenido probablemente sea inconsistente y produzca comportamiento indeseado en el programa.
 
-Nuestra herramienta detecta estas situaciones mediante la comparación del tamaño de la representación de ambas partes de un cast. Si el tamaño es igual
-o mayor no hay necesidad de mostrar ningún mensaje de error. Pero cuando queremos hacer una transformación a una representación menor, es muy probable
-que suframos de perdida de información; y por este motivo nuestro analizador lo detecta y envía un mensaje informando de la situación. Esto lo podemos
-observar programado en el archivo \href{run:../src/mir_visitor/block_visitor.rs}{block\_visitor.rs} entre las lineas 122-150
+Nuestra herramienta detecta estas situaciones mediante la comparación del tamaño de la representación de ambas partes de un cast. Si el tamaño es igual o mayor no hay necesidad de mostrar ningún mensaje de error. Pero cuando queremos hacer una transformación a una representación menor, es muy probable que suframos de perdida de información; y por este motivo nuestro analizador lo detecta y envía un mensaje informando de la situación. Esto lo podemos observar programado en el archivo \href{run:../src/mir_visitor/block_visitor.rs}{block\_visitor.rs} entre las lineas 122-150
 
 En el output a continuación se observa el mensaje de Warning asociado a este caso.
 
@@ -136,25 +109,68 @@ Main body -- End
 \subsection{Points to alias analysis}
 
 \begin{lstlisting}[
-    language=rust,
-    label=code:interprocedural
-    caption={Ejemplo de un programa el cual le aplicamos analisis de alias points to interprocedural}
+    language=Rust,
+    label=code:points_to,
+    caption={Ejemplo de un programa el cual le aplicamos analisis de alias points-to \citep{interprocedural}}
 ]
-fn example(arg: &mut u32) -> u32 {
-    let local = arg;
-    *local = 15;
-    1
-}
-
 fn main() {
-    let mut id = 5;
-    let arg = &mut id;
-    let _pointer = &arg;
-    let _result = example(arg);
+    let mut num = 5;
+
+    let r1 = &num as *const i32;
+    let r2 = &mut num as *mut i32;
+
+    unsafe {
+        let res = *r1 + *r2;
+    }
 }
 \end{lstlisting}
 
+En este fragmento de código podemos ver como se declara una variable mutable \textit{num}, y se crean dos punteros raw que hacen referencia a esta (\textit{r1} y \textit{r2}). Luego se genera una variable \textit{res} que contendrá el valor resultante de la suma de los valores apuntados por \textit{r1} y \textit{r2}, que al ser raw pointers, para ser derreferenciados deben estar dentro de un bloque unsafe.
 
+En este ejemplo, Stacked Borrows no genera ningún error o advertencia, ya que el programa es válido. Sin embargo, sigue existiendo aliasing y esto puede representar un problema a futuro si se llegase a modificar el código. Ahi es donde entra nuestro points-to análisis, que genera un grafo de alias a medida que se construye el programa y una vez terminado, lo observa para buscar potenciales problemas de alias. Si encuentra alguno, lo reporta por pantalla al finalizar el análisis de cada una de las funciones. Además, gracias a Stacked Borrows podemos saber si esa misma variable esta viva o muerta, y en caso de que se encuentre en este ultimo estado, también lo mencionamos por pantalla.
 
+En la salida de la ejecución de nuestra herramienta podemos observar como nos advierte del posible problema de aliasing de \textit{num} y mediante la vista una parte del grafo (utiliza formato DOT) vemos cuales son las variables definidas por el usuario y auxiliares que apuntan a \textit{num}
 
+\begin{minipage}[c][10cm][c]{0,5\textwidth}
+\begin{lstlisting}[language=Rust]
+Block Main bb1 --End
+Main body -- End
 
+Variable num may have aliasing
+digraph {
+    0 [ label = "num"]
+    1 [ label = "3"]
+    2 [ label = "r1"]
+    3 [ label = "5"]
+    4 [ label = "r2"]
+    5 [ label = "7"]
+    6 [ label = "8"]
+    7 [ label = "9"]
+    8 [ label = "_res"]
+    1 -> 0 [ ]
+    2 -> 1 [ ]
+    3 -> 0 [ ]
+    4 -> 3 [ ]
+    8 -> 7 [ ]
+}
+\end{lstlisting}
+\end{minipage}
+\begin{minipage}[c][9cm][t]{0,5\textwidth}
+\begin{center}
+	\begin{tikzpicture}
+	    \begin{dot2tex}[tikz,options=-t math,scale=1.3]
+	    digraph {
+	        0 [ label = "num"]
+	        1 [ label = "3"]
+	        2 [ label = "r1"]
+	        3 [ label = "5"]
+	        4 [ label = "r2"]
+	        1 -> 0 [ ]
+	        2 -> 1 [ ]
+	        3 -> 0 [ ]
+	        4 -> 3 [ ]
+	    }
+	    \end{dot2tex}
+	\end{tikzpicture}
+\end{center}
+\end{minipage}

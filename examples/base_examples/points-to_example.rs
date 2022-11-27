@@ -5,7 +5,6 @@ fn main() {
     let r2 = &mut num as *mut i32;
 
     unsafe {
-        let res = *r1 + *r2;
-        // println!("{}", res);
+        let _res = *r1 + *r2;
     }
 }

@@ -1,14 +1,23 @@
 \documentclass{report}
 
 \usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
 \usepackage[a4paper,top=2cm,bottom=3cm,left=2cm,right=2cm,marginparwidth=1.5cm]{geometry}
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{import}
 \usepackage{blindtext}
 \usepackage{parskip}
-
+\usepackage{multicol}
+\usepackage{wrapfig}
 \usepackage{hyperref}
+\usepackage{natbib}
+% \usepackage{showframe}
+% Need to install the following package. In ubuntu sudo apt install dot2tex. Requieres -shell-escape arg in recipe
+\usepackage{dot2texi}
+\usepackage{tikz}
+
+\usetikzlibrary{shapes,arrows}
 \hypersetup{
     colorlinks=true,
     linkcolor=black,
@@ -34,7 +43,7 @@
 
 
 \nocite{*}
-\bibliographystyle{unsrt}
+\bibliographystyle{apalike}
 \bibliography{bibliografia}
 
 \end{document}

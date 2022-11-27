@@ -1,3 +1,18 @@
 \chapter{Introducción}
-\blindtext[1]
+
+\section{Que es Rust}
+
+Rust es un lenguaje de programación moderno, compilado, multiparadigma y de propósito general. Este comenzó siendo desarrollado por Mozilla, y vio sus primeras versiones hace más de una década en el 2010, siendo sus mayores influencias C++, Haskell y Erlang. Este lenguaje ha tenido un gran impacto en la comunidad de programadores, y ha sido votado como el “lenguaje de programación mas querido” en Stack Overflow desde el año 2016 hasta el 2022.
+
+Rust fue diseñado desde el comienzo teniendo una visión muy enfocada en el rendimiento, la concurrencia y especialmente en la seguridad. Tal es así que implementa características únicas, como lo es su sistema de tipos basado en \textit{ownership}, junto a la herramienta del \textit{borrow-checker}, que permite a Rust garantizar la seguridad de la memoria y de los hilos de ejecución y eliminar muchos fallos en tiempo de compilación, ademas de ser muy rápido y eficiente ya que evita los problemas que trae el uso del garbage collector utilizado en muchos lenguajes modernos. Gracias a esto y a sus mecanismos de manejo de memoria de bajo nivel, hoy en dia Rust es considerado como una alternativa (inclusive más segura) a C y C++
+
+Sin embargo, al colocar tantas restricciones para mantener la seguridad de todos los programas escritos en Rust, resulta complejo o incluso imposible crear ciertas estructuras o programas respetando todos las comprobaciones de seguridad que el lenguaje por defecto implementa. Debido a esto, surge la necesidad del código unsafe en Rust, en donde se deshabilitan ciertas de estas restricciones y queda la responsabilidad del programador crear programas seguros y sin fallos.
+
+En un lenguaje donde la seguridad imperativa, dejarla en mano de los programadores no es la solución ideal ya que se pueden cometer errores difíciles de detectar y que pongan en riesgo la estabilidad del sistema en general. Este problema ha sido detectado y está siendo atacado por la comunidad de Rust, mediante ciertos mecanismos en proyectos como MIRI o Rudra, que contienen una gran cantidad de herramientas para detectar errores específicos en código safe o unsafe. Estas herramientas, sin embargo, toman un enfoque más dinámico y dependen de otros factores, como por ejemplo la disponibilidad de tests para poder realizar los análisis.
+
+El presente trabajo tiene como objetivo crear una herramienta específica para el análisis estático del código Rust que permita analizar bloques de un programa que contengan código unsafe y su contexto inmediato, para encontrar errores o fallos de los cuales, si los mecanismos de seguridad no hubieran sido deshabilitados, deberían haber sido captados y reportados por el compilador. En especial, enfocarnos en encontrar problemas de aliasing, o mediante Stacked Borrows problemas de referencias colgadas que el borrow-checker se habría encargado.
+
+A lo largo de la tesis explicaremos las particularidades del lenguaje y su compilador, para luego poder explicar como diseñamos y desarrollamos esta herramienta. En el resto del capitulo 1 hablaremos un poco mas sobre el lenguaje safe y la necesidad del unsafe, junto con las características principales de Rust como lo son el sistema de \textit{ownership} y \textit{borrow}. En el capitulo 2 nos centraremos en hablar específicamente del sistema de tipos de rust centrándonos en el ámbito unsafe. Luego, en el capitulo 3, hablaremos sobre Stacked Borrows \citep{stackedborrows} y diferentes análisis estáticos realizados, y conceptualmente como hicimos para extender el \textit{borrow-checker}. El cuarto capitulo nos centraremos en como diseñamos e implementamos la herramienta, para luego en el capitulo 5 mostrar ejemplos del funcionamiento de la misma y observar cual podría ser el futuro del proyecto.
+
+
 
