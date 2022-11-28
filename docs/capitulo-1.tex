@@ -1,18 +1,157 @@
 \chapter{Introducción}
 
-\section{Que es Rust}
+\section{Que es Rust? Cuál es nuestro objetivo?}
 
 Rust es un lenguaje de programación moderno, compilado, multiparadigma y de propósito general. Este comenzó siendo desarrollado por Mozilla, y vio sus primeras versiones hace más de una década en el 2010, siendo sus mayores influencias C++, Haskell y Erlang. Este lenguaje ha tenido un gran impacto en la comunidad de programadores, y ha sido votado como el “lenguaje de programación mas querido” en Stack Overflow desde el año 2016 hasta el 2022.
 
-Rust fue diseñado desde el comienzo teniendo una visión muy enfocada en el rendimiento, la concurrencia y especialmente en la seguridad. Tal es así que implementa características únicas, como lo es su sistema de tipos basado en \textit{ownership}, junto a la herramienta del \textit{borrow-checker}, que permite a Rust garantizar la seguridad de la memoria y de los hilos de ejecución y eliminar muchos fallos en tiempo de compilación, ademas de ser muy rápido y eficiente ya que evita los problemas que trae el uso del garbage collector utilizado en muchos lenguajes modernos. Gracias a esto y a sus mecanismos de manejo de memoria de bajo nivel, hoy en dia Rust es considerado como una alternativa (inclusive más segura) a C y C++
+Rust fue diseñado desde el comienzo teniendo una visión muy enfocada en el rendimiento, la concurrencia y especialmente en la seguridad. Tan es así que implementa características únicas, como lo es su sistema de tipos basado en \textit{ownership}, junto a la herramienta del \textit{borrow-checker}, que permite a Rust garantizar la seguridad de la memoria y de los hilos de ejecución y eliminar muchos fallos en tiempo de compilación, además de ser muy rápido y eficiente porque evita los problemas que trae el uso del garbage-collector utilizado en muchos lenguajes modernos. Gracias a esto y a sus mecanismos de manejo de memoria de bajo nivel, hoy en día Rust es considerado como una alternativa (inclusive más segura) a C y C++. Por esto grandes empresas como Microsoft, Amazon y Google utilizan Rust en muchos de sus proyectos. Al ser multi-propósito se utiliza en muchos ámbitos, pero especialmente es utilizado en la creación de programas para sistemas embebidos y servidores webs.
 
-Sin embargo, al colocar tantas restricciones para mantener la seguridad de todos los programas escritos en Rust, resulta complejo o incluso imposible crear ciertas estructuras o programas respetando todos las comprobaciones de seguridad que el lenguaje por defecto implementa. Debido a esto, surge la necesidad del código unsafe en Rust, en donde se deshabilitan ciertas de estas restricciones y queda la responsabilidad del programador crear programas seguros y sin fallos.
+Sin embargo, para mantener la seguridad en todos los programas escritos en Rust, el sistema de tipos de Rust viene asociado a con muchas restricciones y comprobaciones. Estas si bien traen muchas ventajas y forman parte de las bases de Rust, hacen que resulte muy complejo o incluso imposible crear ciertas estructuras o funciones respetándolas. Es por esto que surge la necesidad del código unsafe en Rust, donde se deshabilitan varios de los chequeos del \textit{borrow-checker} y queda en responsabilidad del programador crear programas seguros y sin fallos.
 
-En un lenguaje donde la seguridad imperativa, dejarla en mano de los programadores no es la solución ideal ya que se pueden cometer errores difíciles de detectar y que pongan en riesgo la estabilidad del sistema en general. Este problema ha sido detectado y está siendo atacado por la comunidad de Rust, mediante ciertos mecanismos en proyectos como MIRI o Rudra, que contienen una gran cantidad de herramientas para detectar errores específicos en código safe o unsafe. Estas herramientas, sin embargo, toman un enfoque más dinámico y dependen de otros factores, como por ejemplo la disponibilidad de tests para poder realizar los análisis.
+``Rust puede ser pensado como la combinación de dos lenguajes de programación: Safe Rust y Unsafe Rust. Convenientemente, estos nombres significan exactamente lo que dicen: Safe Rust es seguro. Y Unsafe Rust, no lo es \dots Safe Rust es el \textit{verdadero} lenguaje y Unsafe Rust es exactamente como Safe Rust con las mismas reglas y semánticas, solo que te permite hacer unas cosas extra que de definitivamente no son seguras'' \citep{rustonomicon}
 
-El presente trabajo tiene como objetivo crear una herramienta específica para el análisis estático del código Rust que permita analizar bloques de un programa que contengan código unsafe y su contexto inmediato, para encontrar errores o fallos de los cuales, si los mecanismos de seguridad no hubieran sido deshabilitados, deberían haber sido captados y reportados por el compilador. En especial, enfocarnos en encontrar problemas de aliasing, o mediante Stacked Borrows problemas de referencias colgadas que el borrow-checker se habría encargado.
+En un lenguaje donde la seguridad imperativa, dejarla en mano de los programadores no es la solución ideal ya que se pueden cometer errores difíciles de detectar y que pongan en riesgo la estabilidad del sistema en general. Este problema ha sido detectado y está siendo atacado por la comunidad de Rust, mediante ciertos mecanismos y en proyectos como \textbf{MIRI} o \textbf{Rudra}, que contienen una gran cantidad de herramientas para detectar errores específicos en código unsafe. Estas herramientas, sin embargo, toman un enfoque más dinámico y dependen de otros factores, como por ejemplo la disponibilidad de tests para poder realizar los análisis necesarios.
 
-A lo largo de la tesis explicaremos las particularidades del lenguaje y su compilador, para luego poder explicar como diseñamos y desarrollamos esta herramienta. En el resto del capitulo 1 hablaremos un poco mas sobre el lenguaje safe y la necesidad del unsafe, junto con las características principales de Rust como lo son el sistema de \textit{ownership} y \textit{borrow}. En el capitulo 2 nos centraremos en hablar específicamente del sistema de tipos de rust centrándonos en el ámbito unsafe. Luego, en el capitulo 3, hablaremos sobre Stacked Borrows \citep{stackedborrows} y diferentes análisis estáticos realizados, y conceptualmente como hicimos para extender el \textit{borrow-checker}. El cuarto capitulo nos centraremos en como diseñamos e implementamos la herramienta, para luego en el capitulo 5 mostrar ejemplos del funcionamiento de la misma y observar cual podría ser el futuro del proyecto.
+El presente trabajo tiene como objetivo crear una herramienta para el análisis estático del código Rust; que permita analizar bloques de un programa que contengan código unsafe y su contexto inmediato, para encontrar errores o fallos de los cuales, si los mecanismos de seguridad no hubieran sido deshabilitados, deberían haber sido captados y reportados por el compilador. En especial, nos enfocamos en encontrar problemas de aliasing utilizando el método points-to, mediante Stacked Borrows problemas de referencias colgadas que el borrow-checker se habría encargado y verificar si se producen transformaciones de variables inseguras que puedan producir comportamientos inesperados.
+
+A lo largo de la tesis explicaremos las particularidades del lenguaje y su compilador, para luego poder explicar como diseñamos y desarrollamos esta herramienta, finalizando con muestras de su uso y hablado del futuro del mismo.
+En el resto del apartado introductorio hablaremos más de los conceptos básicos de Rust, los sistemas de \textit{ownership} y \textit{borrow}, ejemplos de la necesidad del unsafe rust y comenzaremos a introducir el sistema de tipos de Rust.
+Durante el segundo capítulo nos centraremos en detallar el sistema de tipos de rust centrándonos en el ámbito unsafe, hablaremos sobre \textit{traits}, \textit{lifetimes}, \textit{raw-pointers} y todas sus particularidades.
+Luego, en la tercer sección, detallaremos los conceptos sobre Stacked Borrows \citep{stackedborrows} y diferentes análisis estáticos extendidos que realizamos. También trataremos como hicimos para extender el \textit{borrow-checker}.
+El cuarto capítulo nos basaremos en el proceso de diseño e implementación de la herramienta. Mostraremos parte del código, compartiremos las decisiones de porque esta estructurado de esa manera y donde podemos encontrar programadas los distintos apartados que fuimos desarrollando.
+Para terminar, el quinto y ultimo apartado, se mostrará ejemplos del funcionamiento de la herramienta para sus distintos usos utilizando diferentes programas pequeños de unsafe Rust pequeños como guía, y además observaremos cual podría ser el futuro del proyecto.
 
 
+\section{Fundamentos de Rust}
+\subsection{Move semantics}
+
+\textit{Ownership} es un conjunto de reglas que dictan como el lenguaje de Rust maneja la memoria. Como mencionamos en anteriormente es una alternativa a los garbage collector que utilizan muchos otros lenguajes modernos, permite detectar el punto en el que una variable debería dejar de usarse y liberarla de la memoria. La diferencia es que Rust realiza los chequeos necesarios de manera estática, lo que brinda un rendimiento y capacidad de identificar problemas mayor. El encargado de verificar que estas reglas se cumplan, es el \textit{borrow-checker}, que cuando detecta un incumplimiento de las mismas, no permite que el programa compile e informa del problema encontrado.
+
+Las reglas de \textit{ownership} o pertenencia son las siguientes:
+\begin{itemize}[noitemsep, nolistsep]
+    \item Cada valor en Rust debe tener un dueño.
+    \item Solo puede haber un dueño en cada momento.
+    \item Cuando el dueño del valor sale de su alcance, el valor será eliminado.
+\end{itemize}
+
+Podemos ilustrar estas reglas con programas simples para mejorar su entendimiento.
+\begin{lstlisting} [
+    language=Rust,
+    label=code:hello_world_1,
+]
+pub fn main() {
+    let hola1 = String::from("hello");
+    let mundo = "world";
+    let hola2 = hola1;
+
+    println!("{}, {}!", hola1, mundo);
+}
+\end{lstlisting}
+
+Este programa parece ser un simple ejemplo de un hola mundo, pero tiene un detalle que lo hace diferente. Una vez dentro de \textit{main}, las primeras dos lineas son declaraciones de las variables hola1 y mundo que contienen Strings con sus equivalentes en texto. En la tercera linea creamos una nueva variable \textit{hola2} a la que le asignamos hola1, para luego en la ultima linea mostrar el contenido de las dos primeras variables. En otros lenguajes, este seria un programa válido, y mostraría por pantalla la ``hello, world!''. Sin embargo, cuando queremos compilar el código nos da un error.
+
+\begin{lstlisting}[
+    language=Rust,
+    label=code:error_hello_world,
+]
+error[E0382]: borrow of moved value: `hola1`
+ --> hello_world.rs:6:25
+  |
+2 |     let hola1 = String::from("hello");
+  |         ----- move occurs because `hola1` has type `String`, which does not implement the `Copy` trait
+3 |     let mundo = "world";
+4 |     let hola2 = hola1;
+  |                 ----- value moved here
+5 |
+6 |     println!("{}, {}!", hola1, mundo);
+  |                         ^^^^^ value borrowed here after move
+\end{lstlisting}
+
+El compilador es bastante informativo, y nos brinda mucha información sobre el problema. La equivocación esta en que no aplicamos bien las reglas de \textit{ownership}. Cuando declaramos e inicializamos \textit{hola2}, estamos haciendo \textbf{uso} de la variable hola1. Al hacer esto, el dueño del String ``hello'' pasa de hola1 a \textit{hola2} y por lo tanto cuando queremos volver a hacer uso de hola1 para mostrar por pantalla, como solo puede haber un dueño y ese es \textit{hola2}, se produce un error. Este se podría solucionar de algunas maneras: utilizando \textit{hola2} dentro de la macro println!, o realizando explícitamente una copia profunda del valor de hola1 mediante la función clone() o haciendo uso de un \textit{borrow} o préstamo de la variable.
+
+Cada vez que se hace un \textbf{uso} de alguna variable, esta misma sale de alcance y volver a utilizarla generaría un error como el que vimos. Es decir, el alcance de una variable inicia cuando esta es declarada y finaliza cuando es \textbf{utilizada} o su \textit{scope} acaba. Esto podemos apreciarlo en el siguiente código.
+
+\begin{lstlisting}[language=Rust]
+    {                           // var no es valida aqui, no fue declarada todavia
+        let mut x = 5;
+        let var = "hello";      // var comienza a ser valido aqui.
+
+        x = x * 2
+        // hacer cosas con var
+    }                           // el scope termina, y por lo tanto var no es mas valida
+\end{lstlisting}
+
+
+La mecánica de pasar un valor a una función es muy similar a cuando le asignamos un valor a una variable. Al pasar utilizar una variable como argumento de una función va a mover (y transferir el ownership) o copiar el valor automáticamente (por ejemplo con tipos básicos como integer, bool o char), de igual manera que en una asignación. En el ejemplo a continuación, proveniente del libro de Rust, podemos ver como  las variables entran y salen del scope al interactuar con funciones con las anotaciones.
+
+\begin{lstlisting} [language=Rust]
+  fn main() {
+    let s1 = dar_ownership();           // dar_ownership mueve su valor de retorno
+                                        // dentro de s1
+
+    let s2 = String::from("hello");     // s2 entra en el scope
+
+    let s3 = toma_y_da_ownership(s2);   // s2 es movida a
+                                        // toma_y_da_ownership, la cual tambien
+                                        // mueve su valor de retorno a s3
+  } // Aqui, s3 sale de su scope y es dropeada(eliminada de memoria). Como s2 fue movida
+    // no pasa nada. termina el alcance de s1 y es borrada de la memoria.
+
+fn dar_ownership() -> String {               // dar_ownership va a mover su valor de
+                                             // retorno dentro de la variable
+                                             // llame a esta funcion.
+
+    let some_string = String::from("yours"); // some_string comienza su alcance
+
+    some_string                              // some_string is devuelta y
+                                             // movida a donde la funcion fue llamada
+}
+
+// Esta funcion toma un String y devuelve el mismo
+fn toma_y_da_ownership(a_string: String) -> String { // a_string comienza su scope
+
+    a_string  // a_string es retornada y se mueve a la funcion que realizo la llamada
+}
+\end{lstlisting}
+
+La transferencia de \textit{ownership} sigue el mismo patron siempre. Y si bien esto funciona excelente, tomar y transferir el ownership de una variable cada vez que llamamos a algún método puede resultar tedioso y dificultar el uso de la información obtenida dentro del cuerpo de la función. Es por esto que surge la necesidad del concepto de \textit{borrow} o préstamo de una variable, que mencionamos anteriormente como parte de las soluciones al error del compilador.
+
+Una variable propietaria de un valor puede prestar(\textit{borrow}) el acceso a este dato, sin perder su \textit{ownership}, a otras variables mediante el uso de referencias. Estas se designan utilizando el operador ``\&''. Las referencias tienen un comportamiento muy similar al de los punteros, ya que es una dirección de memoria a la cual podemos acceder para obtener información la cual pertenece a una variable. A diferencia de los punteros convencionales, Rust asegura que las referencias siempre van a apuntar a un valor válido de un tipo especifico durante todo su tiempo de vida. Podemos apreciar el uso de \textit{borrow} en el siguiente ejemplo:
+
+\begin{lstlisting}[
+  language=Rust,
+  label=code:borrow_example,
+]
+fn main() {
+  let s1 = String::from("mundo");       // creacion de variable s1
+  let mut s2 = String::from("hola, ");  // creacion de variable mutable s2
+
+  add_s1_into_s2(&s1, &mut s2);         // llamada a la funcion add_s1_into_s2 utilizando referencias
+
+  println!("{}", s2);                   // como usamos referencias, ahora podemos mostrar s2 sin problemas
+}
+
+fn add_s1_into_s2(arg1: &String, arg2: &mut String) {
+ arg2.push_str(arg1);                   // hacemos uso de las referencias para concatenar
+}
+\end{lstlisting}
+
+El alcance de los argumentos de la funcion es el mismo, pero los valores señalados por las referencias no se eliminan cuando dejan de usarse o salen del scope de la función porque se no tiene propiedad. Cuando las funciones tienen referencias como parámetros en lugar de los valores reales, no necesitaremos devolver los valores para devolver la propiedad, porque esta nunca se tuvo.
+
+Las variables en rust por defecto son inmutables, es decir, que no se pueden realizar modificaciones a los valores o datos de estas una vez declaradas. Lo mismo sucede con las referencias, al momento de declararlas por defecto son solamente de lectura. Esta es una de las tantas decisiones del diseño de Rust que permiten mejorar la seguridad y aumentar la facilidad de escritura y comprobación de código concurrente.
+
+Sin embargo, uno puede declarar explícitamente que una variable o referencia sea mutable, es decir, que permita la escritura de diferentes valores (todos de un mismo tipo) en diferentes puntos del programa. Para esto, se usa la palabra reservada \textbf{mut}. En los ejemplos anteriores podemos ver el uso de variables inmutables y mutables en conjunto.
+
+En el ejemplo anterior también podemos apreciar también el uso de la mutabilidad e inmutabilidad de las variables y referencias.
+
+Al igual que el \textit{ownership}, los prestamos y referencias también tienen reglas que debemos seguir. Estas son:
+\begin{itemize}
+  \item En cualquier momento, podes tener unicamente solo una referencia mutable o cualquier numero de referencias inmutables
+  \item Las referencias siempre deben ser válidas
+\end{itemize}
+
+De la misma manera, el \textit{borrow-checker} se encarga de comprobar que estas se cumplan a la hora de compilar el programa; y en caso de que falle alguno de los chequeos interrumpir evitar la generación del programa y mostrar el error encontrado. Con estas reglas se pueden evitar muchos problemas, especialmente las condiciones de carrera ya que estas pueden encontrarse cuando dos o mas punteros acceden a una misma dirección de memoria simultáneamente, en donde al menos uno esta escribiendo, y las operaciones no están sincronizadas. Podes tener muchas referencias inmutables, pero solo un puntero mutable, por lo que estas condiciones se detectan y solucionan en tiempo de compilación.
+Sin embargo, no todo es positivo, ya que si bien hace que la seguridad general de los programas sea muy alta, aumenta mucho la complejidad de implementar ciertos programas. Esto como dijimos en la introducción, abre camino al surgimiento de Unsafe Rust.
+
+\subsection{Unsafe Rust}
 
