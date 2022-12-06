@@ -155,3 +155,49 @@ Sin embargo, no todo es positivo, ya que si bien hace que la seguridad general d
 
 \subsection{Unsafe Rust}
 
+El sistema de ownership de Rust es muy estricto en como las variables pueden acceder a la memoria, esto como vimos da muchas garantías de seguridad. Sin embargo, implementar estructuras de datos que requieran aliasing como listas doblemente encadenadas o grafos resulta demasiado complejo. Mediante el uso de la palabra reservada ``unsafe'' se permite delimitar un bloque, una funcion o una trait y deshabilitar algunos chequeos del \textit{borrow-checker}. Las únicas cosas diferentes que se pueden hacer en Unsafe Rust, definidas en el Rustonomicon por \cite{rustonomicon}, son:
+\begin{itemize}[noitemsep]
+  \item Dereferenciar punteros \textit{raw}.
+  \item Llamar funciones unsafe (incluyendo funciones externas, intrínsecos del compilador y el \textit{raw allocator}).
+  \item Implementar traits unsafe.
+  \item Mutar variables estáticas.
+  \item Acceder a los campos de uniones.
+\end{itemize}
+El mal uso de alguna de estas operaciones puede causar comportamiento no definido y por lo tanto, comprometer la seguridad y estabilidad del programa. Los comportamientos indefinidos que especialmente debemos evitar al implementar código utilizando unsafe rust son los siguientes:
+\begin{itemize}[noitemsep]
+  \item Condiciones de carrera.
+  \item Dereferenciar un puntero nulo o colgado.
+  \item Lectura de memoria no inicializada
+  \item Violación de las reglas de aliasing de apuntadores a través de punteros \textit{raw}.
+  \item Valores inválidos en tipos primitivos o en campos/variables locales.
+\end{itemize}
+
+Un ejemplo donde podemos ver el uso de unsafe, extraído desde la librería estándar de Rust, es el siguiente:
+\begin{lstlisting} [language=Rust]
+/// Dereference the given pointer.
+/// `ptr` must be aligned and must not be dangling.
+unsafe fn deref_unchecked(ptr: *const i32) -> i32 {
+    *ptr
+}
+
+pub fn main() {
+  let a = 3;
+  let b = &a as *const _;
+  // SAFETY: `a` has not been dropped and references are always aligned,
+  // so `b` is a valid address.
+  unsafe { assert_eq!(*b, deref_unchecked(b)); };
+}
+\end{lstlisting}
+
+El código intenta comparar el valor apuntado por la referencia \textit{raw} ``b'', que apunta a la variable ``a'', dos veces obteniéndola directamente y mediante el uso de una función. Declarar un puntero plano o raw es considerado seguro por Rust, sin embargo, no es el mismo caso para acceder a su valor. Por eso la funcion \textit{deref\_unchecked} que devuelve el valor apuntado por una referencia plana debe ser marcada como \textbf{unsafe}. De la misma manera, al derefenciar ``b'' y hacer uso de una funcion unsafe el bloque de \textit{main} debe ser delimitado por la palabra reservada \textbf{unsafe}.
+
+La comunidad de Rust para mantener los estándares de seguridad, se puso de acuerdo y estableció una guía de practicas que todos los programadores deberían seguir para reducir los riesgos que surge de reducir las limitaciones del borrow-checker. Estas practicas establecen, según el estudio realizado por \cite{astrauskas2020programmers}, tres principios que son:
+\begin{enumerate}
+  \item Código unsafe en rust debe ser utilizado de manera \textbf{reducida}, para beneficiarse de las garantías inherentes provenientes del lenguaje en la mayor medida posible.
+  \item Bloques de código unsafe deben ser \textbf{directos} y \textbf{auto-contenidos} para minimizar la cantidad de código que los desarrolladores tienen que responder por (por ejemplo mediante revisiones manuales)
+  \item Código unsafe debe ser bien \textbf{encapsulado} a través de abstracciones seguras, por ejemplo, proveyendo librerías que no expongan el uso de unsafe Rust a sus clientes.
+\end{enumerate}
+
+Además, el mismo paper establece que los mayores uso de unsafe son para la implementación y uso de estructuras de datos complejas, enfatizar contratos e invariantes, y el uso de funciones foráneas. Si bien la necesidad de crear código unsafe se ve reducida debido a la accesibilidad de librerías publicas que brindan acceso a tipos y operaciones que ya solucionan muchos de los problemas, sigue existiendo una gran cantidad de programadores que utilizan código inseguro. En el año 2020, aproximadamente un 24\% de las 34.000 bibliotecas de Rust publicadas en \url{crates.io} contenían bloques de código no seguro. Es decir, casi 1 de cada 4 proyectos hicieron uso de Unsafe Rust de alguna u otra manera.
+
+La utilización de herramientas automatizadas para facilitar la comprobación del código que debería ser realizada de manera manual, y por lo tanto sujeta a fallos, ayudaría a minimizar los errores y el tiempo necesario para mantener las garantías de seguridad que uno espera de un programa Rust. Ese es nuestro objetivo, y la herramienta que desarrollamos apunta a resolver principalmente los problemas que surgen al deshabilitar los chequeos de aliasing realizados por el \textit{borrow-checker}.
