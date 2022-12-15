@@ -3,7 +3,8 @@
         "chequeos",
         "derefenciar",
         "estas",
-        "interprocedural"
+        "interprocedural",
+        "structs"
     ],
     "cSpell.language": "en,es-ES"
 }

@@ -1,1 +1,95 @@
 \chapter{El sistema de tipos de Rust}
+
+Rust es un lenguaje de tipado estático, es decir, realiza la especificación y comprobación de tipos durante el tiempo de compilación y no mientras el programa se esta ejecutando. Además, provee una herramienta muy potente que es la inferencia de tipos. Gracias a esto no es necesario declarar los tipos de las variables de manera explicita en la mayor parte de los casos, sino que Rust infiere que clase de valores mediante un análisis del contexto durante la compilación del programa.
+
+A pesar de ser un lenguaje de tipado estático, provee a través de la palabra reservada \textbf{dyn} la posibilidad de realizar el chequeo de tipos en tiempos de ejecución. Si bien al hacer esto perdemos las ventajas de velocidad y seguridad que Rust brinda al realizar los chequeos estáticos, se otorga mayores libertades a la hora de escribir código. Esto puede ser util especialmente en casos donde cierta información, como por ejemplo el tamaño de un valor, es desconocida durante la compilación.
+
+\section{Polimorfismo y Traits}
+
+El lenguaje Rust realiza una implementación un poco distinta del paradigma de programación orientada a objetos. Mediante la creación de \textbf{structs} y \textbf{enum} se almacenan los datos, y utilizando los bloques de implementación se les provee de métodos y funciones a estos. Los bloques de implementación se generan mediante la palabra reservada \textbf{impl}. Esto lo podemos ver apreciado en el siguiente ejemplo:
+
+\begin{lstlisting}[language=Rust]
+struct Square {
+    length: u32,
+    height: u32,
+}
+
+impl Square {
+    pub fn area(&self) -> u32 {
+        self.height * self.length
+    }
+}
+\end{lstlisting}
+
+Creamos el tipo square (cuadrado) que almacena los valores de su altura y su largo. A partir de esto, podríamos crear un objeto de ese tipo brindando la información necesaria, y luego, mediante la función asociada \textit{area} calcular su área utilizando los valores que tenga guardados al momento de la invocación. Esto lo podemos ver reflejado en el código a continuación.
+
+\begin{lstlisting}[language=Rust]
+pub fn main() {
+    let one = Square { length: 2, height: 2 };
+    println!("{}", one.area());
+}
+\end{lstlisting}
+
+Rust, a diferencia de otros lenguajes orientados a objetos como Java o C++, no implementa el concepto de Herencia. Este es un mecanismo por el cual un objeto puede heredar elementos de otra definición de objetos, para de esta manera, acceder a los datos e implementaciones de un objeto ``padre'' sin tener que redefinirlos nuevamente.
+Esta fue una decision tomada nuevamente teniendo en cuenta la seguridad, ya que si no se tiene cuidado es posible compartir mas información de la deseada entre las clases y subclases. Para implementar el polimorfismo, Rust toma otro enfoque distinto mediante el uso de Traits.
+
+\cite{rustbook} definen una trait o rasgo define la funcionalidad que un tipo particular tiene y puede compartir con otros. Se utilizan los traits para definir comportamientos compartidos de manera abstracta. Podemos usarlos para especificar un tipo genérico, que puede ser aplicado para todo el que cumpla con los rasgos marcados. Tienen una similitud a las interfaces, pero con algunas diferencias.
+
+El comportamiento de un tipo esta marcado por las funciones que proporciona. Diferentes tipos comparten el comportamiento si se puede llamar las mismas funciones en todos esos tipos. Los traits o rasgos son una manera de agrupar estos métodos y definir el conjunto de comportamiento.
+
+En el ejemplo anterior, la clase Square implementa el método area, y si quisiéramos crear una clase Rectangle también deberíamos implementar exactamente la misma función. En el caso de una implementación de Circle o Circulo, la información que almacena el objeto y el cuerpo de la función \textit{} seria un poco diferente, pero todas estas clases aunque tengan sus particularidades comparten los rasgos de una Figure o figura geométrica.
+
+Cambiando un poco el código, podemos obtener una implementación que permita hacer uso del Rasgo y de esta manera lograr la que funciones genéricas hagan uso del mismo en vez de clases particulares y obtener los beneficios del polimorfismo.
+
+\begin{lstlisting}[language=Rust]
+pub trait Figure {
+    pub fn area(&self) -> f32;
+}
+
+impl Square for Figure {
+    pub fn area(&self) -> f32 {
+        self.height * self.length
+    }
+}
+\end{lstlisting}
+
+En este caso definimos un único método dentro del Trait, pero pueden haber múltiples donde cada encabezado debe estar en una linea diferente y terminar con un punto y coma.
+
+\section{Lifetimes}
+
+Según \Citeauthor*{rustbook} un \textit{lifetime} o tiempo de vida es una construcción del compilador (mas específicamente del \textit{borrow checker}) usada para asegurar que todos los prestamos sean validos. El tiempo de vida de una variable comienza cuando es creada y termina cuando es destruida. Mientras que lifetimes y scopes son usualmente referidos juntos, no son lo mismo.
+
+Por ejemplo, en el caso de que tomemos prestada una variable a traves de una referencia. El borrow tiene un lifetime que esta determinado por donde es declarado. Y como resultado, este es válido mientras que termine antes de que el owner sea destruido. En cambio, el scope del préstamo esta determinado por el bloque en el que la referencia es usada.
+
+\begin{lstlisting}[language=Rust]
+fn main() {
+    let i = 3; // Lifetime for `i` starts. ----------------+
+    {                                                //    |
+        let borrow1 = &i; `borrow1` lifetime starts. //---+|
+        println!("borrow1: {}", borrow1);            //   ||
+    } //``borrow1'' ends. --------------------------------+|
+    {                                                //    |
+        let borrow2 = &i; `borrow2` lifetime starts. //---+|
+        println!("borrow2: {}", borrow2);            //   ||
+    } //``borrow2'' ends. --------------------------------+|
+}   // Lifetime ends. -------------------------------------+
+
+\end{lstlisting}
+
+En el ejemplo anterior podemos ver como los scopes y lifetimes están relacionados y se diferencian. Hay que notar también que en el código no se utilizaron nombres o tipos asignados para las etiquetas de los tiempos de vida. Esto es gracias al mecanismo de ``\textbf{lifetime elision}'' que implementa el compilador de Rust, que al igual que con los tipos, es capaz de identificar en gran medida los lifetimes y colocarlos automáticamente sin necesidad de establecer las etiquetas de manera explicita.
+
+Sin embargo, cuando dos o más lifetimes están involucrados es necesario establecer explícitamente que las variables tienen diferentes lifetimes. Para esto se utiliza el operador \textbf{\&\'} seguido de una letra. Un ejemplo de esto podría ser el encabezado de la función longest, que compararía dos variables que contengan cadenas, y una de estas podría tener un tiempo de vida mayor que la otra. Esto se representaría de la siguiente manera.
+
+\begin{lstlisting}[language=Rust]
+    fn longest<'a, 'b>(x: &'a str, y: &'b str) -> &'a &str;
+\end{lstlisting}
+
+Existe un lifetime especial \textbf{'static} (estática) que denota que una referencia puede vivir por la duración entera de la ejecución del programa. Es necesario recalcar que su uso debe ser pensado con cuidado, porque podrían generarse referencias colgadas o problemas de compatibilidad entre lifetimes. Generalmente suelen ser utilizadas unicamente para crear constantes globales.
+
+Sin tener en cuenta el mecanismo de \textbf{lifetime elision}, las declaraciones de funciones deben cumplir con las siguientes restricciones:
+\begin{itemize}
+    \item Toda referencia debe tener un tiempo de vida etiquetado.
+    \item Toda referencia retornada debe tener el mismo tiempo de vida que alguno de sus inputs o ser \textit{static}
+\end{itemize}
+Estas reglas también se extienden para las declaraciones de métodos, structs y traits.
+

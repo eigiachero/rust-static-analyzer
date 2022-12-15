@@ -82,7 +82,7 @@ Cada vez que se hace un \textbf{uso} de alguna variable, esta misma sale de alca
 \end{lstlisting}
 
 
-La mecánica de pasar un valor a una función es muy similar a cuando le asignamos un valor a una variable. Al pasar utilizar una variable como argumento de una función va a mover (y transferir el ownership) o copiar el valor automáticamente (por ejemplo con tipos básicos como integer, bool o char), de igual manera que en una asignación. En el ejemplo a continuación, proveniente del libro de Rust, podemos ver como  las variables entran y salen del scope al interactuar con funciones con las anotaciones.
+La mecánica de pasar un valor a una función es muy similar a cuando le asignamos un valor a una variable. Al pasar utilizar una variable como argumento de una función va a mover (y transferir el ownership) o copiar el valor automáticamente (por ejemplo con tipos básicos como integer, bool o char), de igual manera que en una asignación. En el ejemplo a continuación, proveniente del libro de Rust \citep{rustbook}, podemos ver como  las variables entran y salen del scope al interactuar con funciones con las anotaciones.
 
 \begin{lstlisting} [language=Rust]
   fn main() {
@@ -153,7 +153,7 @@ Al igual que el \textit{ownership}, los prestamos y referencias también tienen 
 De la misma manera, el \textit{borrow-checker} se encarga de comprobar que estas se cumplan a la hora de compilar el programa; y en caso de que falle alguno de los chequeos interrumpir evitar la generación del programa y mostrar el error encontrado. Con estas reglas se pueden evitar muchos problemas, especialmente las condiciones de carrera ya que estas pueden encontrarse cuando dos o mas punteros acceden a una misma dirección de memoria simultáneamente, en donde al menos uno esta escribiendo, y las operaciones no están sincronizadas. Podes tener muchas referencias inmutables, pero solo un puntero mutable, por lo que estas condiciones se detectan y solucionan en tiempo de compilación.
 Sin embargo, no todo es positivo, ya que si bien hace que la seguridad general de los programas sea muy alta, aumenta mucho la complejidad de implementar ciertos programas. Esto como dijimos en la introducción, abre camino al surgimiento de Unsafe Rust.
 
-\subsection{Unsafe Rust}
+\subsection{Bases de Unsafe Rust}
 
 El sistema de ownership de Rust es muy estricto en como las variables pueden acceder a la memoria, esto como vimos da muchas garantías de seguridad. Sin embargo, implementar estructuras de datos que requieran aliasing como listas doblemente encadenadas o grafos resulta demasiado complejo. Mediante el uso de la palabra reservada ``unsafe'' se permite delimitar un bloque, una funcion o una trait y deshabilitar algunos chequeos del \textit{borrow-checker}. Las únicas cosas diferentes que se pueden hacer en Unsafe Rust, definidas en el Rustonomicon por \cite{rustonomicon}, son:
 \begin{itemize}[noitemsep]
