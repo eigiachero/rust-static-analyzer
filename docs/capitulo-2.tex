@@ -93,3 +93,89 @@ Sin tener en cuenta el mecanismo de \textbf{lifetime elision}, las declaraciones
 \end{itemize}
 Estas reglas también se extienden para las declaraciones de métodos, structs y traits.
 
+\section{Raw Pointers y Unsafe Rust}
+
+Una de las mayores atracciones de Rust son las garantías de seguridad estáticas sobre el manejo de memoria. Sin embargo, los chequeos estáticos son conservadores por naturaleza. Existen programas que son seguros, pero el compilador no puede verificar que lo sean y los rechaza. Además, realizar programaciones de bajo nivel como interacciones directas con partes del sistema operativo o inclusive implementar un sistema operativo son tareas inherentemente riesgosas. Por estos motivos, existe Unsafe Rust. Al utilizar la palabra reservada \textbf{unsafe} creamos un nuevo bloque para que contenga las operaciones inseguras, y le comunicamos al compilador que entendemos los riesgos y relaje sus restricciones para el mismo.
+
+\cite{rustbook} (capitulo 19) establece que las acciones o \textit{superpoderes} que se pueden hacer en unsafe Rust y no en safe Rust son:
+\begin{itemize}
+    \item Acceder o actualizar una variable mutable estática.
+    \item Dereferenciar un apuntador plano (raw pointer).
+    \item Llamar e implementar funciones unsafe.
+\end{itemize}
+Y es importante recalcar que utilizar unsafe no desactiva el \textit{borrow-checker} ni ninguno de los otros chequeos de seguridad de Rust: si utilizas una referencia en unsafe rust, se le realizaran los chequeos de igual manera.
+
+No todo lo que este dentro de un bloque unsafe es necesariamente riesgoso o va a acceder de una manera invalida a la memoria. Toda persona esta sujeta a fallos y los errores pueden cometerse, por eso al realizar operaciones inseguras en bloques anotados y delimitados por \textbf{unsafe} ayuda al aislamiento y facilidad de encontrar los errores relacionados con los problemas de seguridad de la memoria. Al encapsular código unsafe en bloques pequeños también se evita propagar los fallos a otros bloques o librerías que no estén relacionadas o que se asuman seguras.
+
+Los punteros planos son tipo en Unsafe Rust que son muy similares a las referencias, pero también se diferencian de estas. Los apuntadores planos te permiten llevar a cabo aritmética de punteros arbitraria, y pueden causar un numero de problemas de seguridad. En algunos sentidos, la habilidad de dereferenciar un apuntador arbitrario es una de las cosas mas peligrosas que puedes hacer.
+A diferencia de las referencias, los punteros planos:
+\begin{itemize}
+    \item Permiten ignorar las reglas de borrow (préstamo) al tener punteros mutables e inmutables o multiples punteros mutables en un mismo bloque.
+    \item No garantizan apuntar a un sector valido de la memoria
+    \item Pueden ser null (vacíos o no inicializados)
+\end{itemize}
+
+Al igual que las referencias, los raw pointers pueden ser mutables o inmutables y se escriben \textbf{*mut T} y \textbf{*const T} respectivamente.
+\begin{lstlisting}[language=Rust]
+    let mut value = 1;
+
+    let immutable = &value as *const i32;
+    let mutable = &mut value as *mut i32;
+
+    unsafe {
+        println!("Inmutable es: {} y Mutable es: {}", *immutable, *mutable);
+    }
+\end{lstlisting}
+
+En este simple ejemplo podemos ver como se crean punteros planos usando la palabra reservada \textbf{as} para hacer un casteo de una referencia mutable o inmutable a su raw pointer correspondiente. También podemos observar que no es necesario crear punteros planos dentro de un bloque unsafe ya que no genera ningún peligro; sin embargo, cuando tratamos de acceder a los valores que apuntan pueden generarse comportamientos inadecuados en el programa y por lo tanto deben enmarcarse en unsafe. En el ejemplo, usamos el operador \textbf{*} para acceder a la información apuntada por una referencia o puntero plano, y asi mostrarla por pantalla usando la macro \textit{println!}.
+
+Podemos notar que ambos punteros mutable e immutable apuntan a la misma direccion de memoria, donde value esta almacenada. Si hubiésemos utilizado referencias, el programa no habría compilado ya que se rompen las reglas del \textit{borrow-checker}. En el ejemplo anterior estamos accediendo a una variable de manera inmutable y luego podemos potencialmente modificarla mediante el puntero mutable, lo que produciría una condición de carrera.
+
+El siguiente fragmento de código seria rechazado por el compilador si no se hiciera uso del unsafe:
+\begin{lstlisting}[language=Rust]
+    let mut num = 3;
+
+    let x = &mut num as *mut i32;
+    let y = &mut num as *mut i32;
+
+    unsafe {
+        *x = 1;
+        *y = 2;
+    }
+\end{lstlisting}
+
+En este programa, podemos ver que existen dos punteros planos mutables que comparten la misma dirección de memoria, en la que se encuentra el valor de num. Si se hicieran uso de referencias en vez de raw-pointers, se romperían las reglas del \textit{borrow-checker} y por lo tanto el código no compilaría. Vemos que las variables \textbf{x} e \textbf{y} están ambas modificando el mismo valor. Si no se tiene cuidado, esto puede generar problemas como inconsistencia en la memoria, condiciones de carrera, comportamientos no deseados en el programa, fugas en la memoria, etc.
+
+Aun asi, muchos pueden optar por hacer uso de esta herramienta para implementar programas de una manera mas eficiente o simple. Un ejemplo de esto, mencionado también por el libro de referencia de Rust, son las listas doblemente encadenadas, la cual no tiene una estructura de árbol y es complicado crearlas solo en safe rust. Extendiendo una lista simple utilizando raw-pointers y bloques unsafe para apuntar a nodos anteriores da una solución simple a este problema.
+
+\Citeauthor{learningwithlists} explora de manera didáctica la creación de estas listas encadenadas, y los contratiempos que uno se encuentra con los diferentes métodos de implementar estas estructuras. Ella establece que el problema más importante es el aliasing de punteros. Dos punteros son alias cuando apuntan a una misma dirección de memoria. El compilador usa la información acerca de donde referencian los punteros para optimizar los accesos a la memoria, por eso si la información que tiene es errónea entonces el programa va a ser mal compilado y generar resultados aleatorios que no sirven. El compilador debe saber cuando es seguro asumir que valor puede ser "recordado" (cache) en vez de ser leido reiteradamente.
+
+MIRI \cite{miri} es un interprete experimental de la representación intermedia del nivel medio (MIR) de Rust. Esta desarrollada al mismo tiempo que el compilador, y tiene como objetivo ayudar a encontrar ciertos casos de comportamiento no deseado en los programas de Rust. Entre algunos que podemos mencionar son:
+\begin{itemize}
+    \item Acceso de memoria out-of-bounds y use-after-free
+    \item Uso de valores sin inicializar
+    \item Violaciones de los invariantes de tipos básicos
+    \item Fugas de memoria
+    \item etc.
+\end{itemize}
+Con esta herramienta no es posible detectar todos los posibles comportamientos no deseados, pero podría considerarse como la herramienta estándar de los programadores Rust para encontrar errores en el código debido a la diversidad de errores importantes que ataca y a su alto nivel de mantenimiento. Ellos creen que el aliasing también es un problema muy importante, y por eso implementan Stacked Borrows \cite{stackedborrows} para afrontarlo. Stacked borrows es una semántica operacional  para Rust, que define condiciones bien marcadas en las cuales Rust exhibe comportamiento indeseado debido a errores de aliasing.
+
+La idea principal de su implementación es definir una version dinámica del análisis estático (o \textit{borrow-checker}), que Rust ya utiliza para comprobar que las referencias sean accedidas de manera acorde con las reglas que venimos mencionando. A pesar de que esta idea es muy buena, realizar los chequeos de manera dinámica reduce tiene un efecto en el rendimiento y además la herramienta MIRI requiere de información extra como la existencia de tests o definiciones de pre y post condiciones para poder hacer ciertos tests.
+
+Nosotros con este trabajo planteamos el desarrollo de una nueva herramienta, utilizando el MIR para extender el \textit{borrow-checker} y mediante análisis estáticos tratar de detectar los problemas que de no haberse deshabilitado los chequeos por defecto de Rust habrían sido captados. Especialmente nos enfocaremos en la detección de aliasing de punteros. Implementamos Stacked Borrows para poder detectar los lifetimes de las variables y comprobar que las referencias que puedan superponerse se usen de una manera correcta. Además, implementamos un analizador de alias iterprocedural points-to \cite{interprocedural} \cite{fastaliasinganalisis} para complementar el análisis anterior y obtener aun mayor información.
+
+Gracias a esto deberíamos ser capaces de encontrar la mayoría de las situaciones en las que punteros acceden al mismo lugar de la memoria, e informarle al programador para que pueda comprobar si el código programado es correcto e intencional. El objetivo es que sea una utilidad que funcione como una extension del compilador y ayude a la detección de punteros que son alias, para asi evitar posteriores problemas generados por esto.
+
+Otra situación que tenemos en cuenta es la comprobación de los casts realizados al utilizar punteros planos. Al deshabilitarse las comprobaciones, se podrían realizar transformaciones de tipos que no tengan la misma representación, y esto es peligroso ya que la información almacenada puede quedar inconsistente y generar comportamiento indeseado.
+Creemos que este problema es posible de abarcar extendiendo el \textit{borrow-checker}.
+
+Para lograr que funcione como una extension del compilador y poder implementar los analizadores que planteamos, crearemos un programa en el lenguaje Rust, utilizando una version nightly (nightly-2022-01-01). Esto ultimo es porque las versiones nightly contienen bibliotecas extras que no se encuentran en la rama estable. Estas nos permiten interceptar el compilador (especialmente nuestro punto de interés es el MIR) y extenderlo. Además brinda herramientas que son totalmente necesarias y útiles para el desarrollo de los análisis y el programa en general.
+
+También con este trabajo evaluaremos el uso del unsafe por la comunidad, la utilidad del análisis estático de código y comprobaremos si el análisis del contexto inmediato es suficiente para la detección de errores generados por unsafe.
+
+
+
+
+
+
+
