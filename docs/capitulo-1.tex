@@ -1,6 +1,6 @@
 \chapter{Introducción}
 
-\section{Que es Rust? Cuál es nuestro objetivo?}
+\section{Que es Rust?}
 
 Rust es un lenguaje de programación moderno, compilado, multiparadigma y de propósito general. Este comenzó siendo desarrollado por Mozilla, y vio sus primeras versiones hace más de una década en el 2010, siendo sus mayores influencias C++, Haskell y Erlang. Este lenguaje ha tenido un gran impacto en la comunidad de programadores, y ha sido votado como el “lenguaje de programación mas querido” en Stack Overflow desde el año 2016 hasta el 2022.
 
@@ -13,13 +13,6 @@ Sin embargo, para mantener la seguridad en todos los programas escritos en Rust,
 En un lenguaje donde la seguridad imperativa, dejarla en mano de los programadores no es la solución ideal ya que se pueden cometer errores difíciles de detectar y que pongan en riesgo la estabilidad del sistema en general. Este problema ha sido detectado y está siendo atacado por la comunidad de Rust, mediante ciertos mecanismos y en proyectos como \textbf{MIRI} o \textbf{Rudra}, que contienen una gran cantidad de herramientas para detectar errores específicos en código unsafe. Estas herramientas, sin embargo, toman un enfoque más dinámico y dependen de otros factores, como por ejemplo la disponibilidad de tests para poder realizar los análisis necesarios.
 
 El presente trabajo tiene como objetivo crear una herramienta para el análisis estático del código Rust; que permita analizar bloques de un programa que contengan código unsafe y su contexto inmediato, para encontrar errores o fallos de los cuales, si los mecanismos de seguridad no hubieran sido deshabilitados, deberían haber sido captados y reportados por el compilador. En especial, nos enfocamos en encontrar problemas de aliasing utilizando el método points-to, mediante Stacked Borrows problemas de referencias colgadas que el borrow-checker se habría encargado y verificar si se producen transformaciones de variables inseguras que puedan producir comportamientos inesperados.
-
-A lo largo de la tesis explicaremos las particularidades del lenguaje y su compilador, para luego poder explicar como diseñamos y desarrollamos esta herramienta, finalizando con muestras de su uso y hablado del futuro del mismo.
-En el resto del apartado introductorio hablaremos más de los conceptos básicos de Rust, los sistemas de \textit{ownership} y \textit{borrow}, ejemplos de la necesidad del unsafe rust y comenzaremos a introducir el sistema de tipos de Rust.
-Durante el segundo capítulo nos centraremos en detallar el sistema de tipos de rust centrándonos en el ámbito unsafe, hablaremos sobre \textit{traits}, \textit{lifetimes}, \textit{raw-pointers} y todas sus particularidades.
-Luego, en la tercer sección, detallaremos los conceptos sobre Stacked Borrows \citep{stackedborrows} y diferentes análisis estáticos extendidos que realizamos. También trataremos como hicimos para extender el \textit{borrow-checker}.
-El cuarto capítulo nos basaremos en el proceso de diseño e implementación de la herramienta. Mostraremos parte del código, compartiremos las decisiones de porque esta estructurado de esa manera y donde podemos encontrar programadas los distintos apartados que fuimos desarrollando.
-Para terminar, el quinto y ultimo apartado, se mostrará ejemplos del funcionamiento de la herramienta para sus distintos usos utilizando diferentes programas pequeños de unsafe Rust pequeños como guía, y además observaremos cual podría ser el futuro del proyecto.
 
 
 \section{Fundamentos de Rust}
@@ -201,3 +194,20 @@ La comunidad de Rust para mantener los estándares de seguridad, se puso de acue
 Además, el mismo paper establece que los mayores uso de unsafe son para la implementación y uso de estructuras de datos complejas, enfatizar contratos e invariantes, y el uso de funciones foráneas. Si bien la necesidad de crear código unsafe se ve reducida debido a la accesibilidad de librerías publicas que brindan acceso a tipos y operaciones que ya solucionan muchos de los problemas, sigue existiendo una gran cantidad de programadores que utilizan código inseguro. En el año 2020, aproximadamente un 24\% de las 34.000 bibliotecas de Rust publicadas en \url{crates.io} contenían bloques de código no seguro. Es decir, casi 1 de cada 4 proyectos hicieron uso de Unsafe Rust de alguna u otra manera.
 
 La utilización de herramientas automatizadas para facilitar la comprobación del código que debería ser realizada de manera manual, y por lo tanto sujeta a fallos, ayudaría a minimizar los errores y el tiempo necesario para mantener las garantías de seguridad que uno espera de un programa Rust. Ese es nuestro objetivo, y la herramienta que desarrollamos apunta a resolver principalmente los problemas que surgen al deshabilitar los chequeos de aliasing realizados por el \textit{borrow-checker}.
+
+
+\section{Objetivos}
+
+Nosotros con este trabajo planteamos el desarrollo de una nueva herramienta, utilizando el MIR (representacion intermedia del compilador) para extender el \textit{borrow-checker} y mediante análisis estáticos tratar de detectar los problemas que de no haberse deshabilitado los chequeos por defecto de Rust habrían sido captados. Especialmente nos enfocaremos en la detección de aliasing de punteros. Implementamos Stacked Borrows para poder detectar los lifetimes de las variables y comprobar que las referencias que puedan superponerse se usen de una manera correcta. Además, implementamos un analizador de alias interprocedural points-to \cite{interprocedural} \cite{fastaliasinganalisis} para complementar el análisis anterior y obtener aun mayor información.
+
+Gracias a esto deberíamos ser capaces de encontrar la mayoría de las situaciones en las que punteros acceden al mismo lugar de la memoria, e informarle al programador para que pueda comprobar si el código programado es correcto e intencional. El objetivo es que sea una utilidad que funcione como una extension del compilador y ayude a la detección de punteros que son alias, para asi evitar posteriores problemas generados por esto.
+
+Otra situación que tenemos en cuenta es la comprobación de los casts realizados al utilizar punteros planos. Al deshabilitarse las comprobaciones, se podrían realizar transformaciones de tipos que no tengan la misma representación, y esto es peligroso ya que la información almacenada puede quedar inconsistente y generar comportamiento indeseado.
+Creemos que este problema es posible de abarcar extendiendo el \textit{borrow-checker}.
+
+Para lograr que funcione como una extension del compilador y poder implementar los analizadores que planteamos, crearemos un programa en el lenguaje Rust, utilizando una version nightly (nightly-2022-01-01). Esto ultimo es porque las versiones nightly contienen bibliotecas extras que no se encuentran en la rama estable. Estas nos permiten interceptar el compilador (especialmente nuestro punto de interés es el MIR) y extenderlo. Además brinda herramientas que son totalmente necesarias y útiles para el desarrollo de los análisis y el programa en general.
+
+Durante el segundo capítulo nos centraremos en detallar el sistema de tipos de rust centrándonos en el ámbito unsafe, hablaremos sobre \textit{traits}, \textit{lifetimes}, \textit{raw-pointers} y todas sus particularidades. Tambien discutiremos los trabajos relacionados que se han realizado sobre este tema.
+Luego, en la tercer sección, detallaremos los conceptos sobre Stacked Borrows \citep{stackedborrows} y diferentes análisis estáticos extendidos que realizamos. También trataremos como hicimos para extender el \textit{borrow-checker}.
+El cuarto capítulo nos basaremos en el proceso de diseño e implementación de la herramienta. Mostraremos parte del código, compartiremos las decisiones de porque esta estructurado de esa manera y donde podemos encontrar programadas los distintos apartados que fuimos desarrollando.
+Para terminar, el quinto y ultimo apartado, se mostrará ejemplos del funcionamiento de la herramienta para sus distintos usos utilizando diferentes programas pequeños de unsafe Rust pequeños como guía, y además observaremos cual podría ser el futuro del proyecto.

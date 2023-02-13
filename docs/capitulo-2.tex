@@ -78,7 +78,7 @@ fn main() {
 
 En el ejemplo anterior podemos ver como los scopes y lifetimes están relacionados y se diferencian. Hay que notar también que en el código no se utilizaron nombres o tipos asignados para las etiquetas de los tiempos de vida. Esto es gracias al mecanismo de ``\textbf{lifetime elision}'' que implementa el compilador de Rust, que al igual que con los tipos, es capaz de identificar en gran medida los lifetimes y colocarlos automáticamente sin necesidad de establecer las etiquetas de manera explicita.
 
-Sin embargo, cuando dos o más lifetimes están involucrados es necesario establecer explícitamente que las variables tienen diferentes lifetimes. Para esto se utiliza el operador \textbf{\&\'} seguido de una letra. Un ejemplo de esto podría ser el encabezado de la función longest, que compararía dos variables que contengan cadenas, y una de estas podría tener un tiempo de vida mayor que la otra. Esto se representaría de la siguiente manera.
+Sin embargo, cuando dos o más lifetimes están involucrados es necesario establecer explícitamente que las variables tienen diferentes lifetimes. Para esto se utiliza el operador \textbf{\'} seguido de una letra. Un ejemplo de esto podría ser el encabezado de la función longest, que compararía dos variables que contengan cadenas, y una de estas podría tener un tiempo de vida mayor que la otra. Esto se representaría de la siguiente manera.
 
 \begin{lstlisting}[language=Rust]
     fn longest<'a, 'b>(x: &'a str, y: &'b str) -> &'a &str;
@@ -150,6 +150,8 @@ Aun asi, muchos pueden optar por hacer uso de esta herramienta para implementar 
 
 \Citeauthor{learningwithlists} explora de manera didáctica la creación de estas listas encadenadas, y los contratiempos que uno se encuentra con los diferentes métodos de implementar estas estructuras. Ella establece que el problema más importante es el aliasing de punteros. Dos punteros son alias cuando apuntan a una misma dirección de memoria. El compilador usa la información acerca de donde referencian los punteros para optimizar los accesos a la memoria, por eso si la información que tiene es errónea entonces el programa va a ser mal compilado y generar resultados aleatorios que no sirven. El compilador debe saber cuando es seguro asumir que valor puede ser "recordado" (cache) en vez de ser leido reiteradamente.
 
+\section{Trabajos relacionados}
+
 MIRI \cite{miri} es un interprete experimental de la representación intermedia del nivel medio (MIR) de Rust. Esta desarrollada al mismo tiempo que el compilador, y tiene como objetivo ayudar a encontrar ciertos casos de comportamiento no deseado en los programas de Rust. Entre algunos que podemos mencionar son:
 \begin{itemize}
     \item Acceso de memoria out-of-bounds y use-after-free
@@ -162,17 +164,11 @@ Con esta herramienta no es posible detectar todos los posibles comportamientos n
 
 La idea principal de su implementación es definir una version dinámica del análisis estático (o \textit{borrow-checker}), que Rust ya utiliza para comprobar que las referencias sean accedidas de manera acorde con las reglas que venimos mencionando. A pesar de que esta idea es muy buena, realizar los chequeos de manera dinámica reduce tiene un efecto en el rendimiento y además la herramienta MIRI requiere de información extra como la existencia de tests o definiciones de pre y post condiciones para poder hacer ciertos tests.
 
-Nosotros con este trabajo planteamos el desarrollo de una nueva herramienta, utilizando el MIR para extender el \textit{borrow-checker} y mediante análisis estáticos tratar de detectar los problemas que de no haberse deshabilitado los chequeos por defecto de Rust habrían sido captados. Especialmente nos enfocaremos en la detección de aliasing de punteros. Implementamos Stacked Borrows para poder detectar los lifetimes de las variables y comprobar que las referencias que puedan superponerse se usen de una manera correcta. Además, implementamos un analizador de alias iterprocedural points-to \cite{interprocedural} \cite{fastaliasinganalisis} para complementar el análisis anterior y obtener aun mayor información.
+Rudra \cite{rudra} es un analizador estático el cuál su objetivo principal es la detección de los comportamientos indefinidos comunes en Rust. Es capaz de analizar tanto programas simples como paquetes de cargo. Los bugs detectados por esta herramienta son problemas de Panic Safety, Higher Order Invariant y Send Sync Variance, los cuales se producen cuando se mal utiliza el unsafe en situaciones particulares, como al generarse un panic o realizarse un mal uso de código asíncrono. Si bien su enfoque es distinto, al utilizar análisis estático es muy eficiente y esto se ve evidenciado en que fue capaz de analizar la totalidad de los paquetes publicados en crates.io en menos de 7 horas.
 
-Gracias a esto deberíamos ser capaces de encontrar la mayoría de las situaciones en las que punteros acceden al mismo lugar de la memoria, e informarle al programador para que pueda comprobar si el código programado es correcto e intencional. El objetivo es que sea una utilidad que funcione como una extension del compilador y ayude a la detección de punteros que son alias, para asi evitar posteriores problemas generados por esto.
+Otro proyecto a tener en cuanta es MirChecker \cite{li2021mirchecker}, que al igual que Rudra y este trabajo, utiliza un análisis estático del MIR para crear un framework automatizado para la detección de bugs. Realizan una cantidad muy grande de tests en donde comprueban errores matemáticos, lógicos, loops infinitos, accesos fuera de rangos, usos después de liberación de memoria, etc. Esta herramienta no es tan utilizada como MIRI o Rudra, pero al ser muy diversa es útil para detectar muchos errores.
 
-Otra situación que tenemos en cuenta es la comprobación de los casts realizados al utilizar punteros planos. Al deshabilitarse las comprobaciones, se podrían realizar transformaciones de tipos que no tengan la misma representación, y esto es peligroso ya que la información almacenada puede quedar inconsistente y generar comportamiento indeseado.
-Creemos que este problema es posible de abarcar extendiendo el \textit{borrow-checker}.
-
-Para lograr que funcione como una extension del compilador y poder implementar los analizadores que planteamos, crearemos un programa en el lenguaje Rust, utilizando una version nightly (nightly-2022-01-01). Esto ultimo es porque las versiones nightly contienen bibliotecas extras que no se encuentran en la rama estable. Estas nos permiten interceptar el compilador (especialmente nuestro punto de interés es el MIR) y extenderlo. Además brinda herramientas que son totalmente necesarias y útiles para el desarrollo de los análisis y el programa en general.
-
-También con este trabajo evaluaremos el uso del unsafe por la comunidad, la utilidad del análisis estático de código y comprobaremos si el análisis del contexto inmediato es suficiente para la detección de errores generados por unsafe.
-
+Todos estos proyectos tratan de enfocar los conflictos que pueden encontrarse al hacer uso de Unsafe Rust, e inclusive utilizan métodos y enfoques similares, pero cada uno apunta a resolver obstáculos diferentes. Este proyecto toma en cuenta las bases sentadas por estas herramientas, y nos enfocaremos a atacar problemas especificos diferentes que creemos que son igual de importantes, y esperamos que el uso conjunto con alguna de las anteriores permita abarcar y encontrar una mayor cantidad de errores de código.
 
 
 
