@@ -64,7 +64,7 @@ tiene una representación en MIR de la siguiente forma:
     }
 \end{lstlisting}
 
-Este ejemplo, como indica el comentario arriba, muestra el MIR para que sea más sencillo de leer por las personas. Podemos apreciar como se crea la función main, se realizan las declaraciones de las variables en la parte superior y luego procede a definirse los bloques básicos. En este caso, el bloque bb0 es el único que se construyo y contiene dos statements y un terminator. Debido a la optimizaciones del compilador (expansión de constantes), los statements son solo asignaciones directas sin la necesidad de hacer una suma como en el programa fuente. El terminator en este caso es la llamada a return.
+Este ejemplo, como indica el comentario arriba, muestra el MIR para que sea más sencillo de leer por las personas. Podemos apreciar como se crea la función main, se realizan las declaraciones de las variables en la parte superior y luego procede a definirse los bloques básicos. En este caso, el bloque bb0 es el único que se construyo y contiene dos statements y un terminator. Debido a la optimizaciones del compilador (propagación de constantes), los statements son solo asignaciones directas sin la necesidad de hacer una suma como en el programa fuente. El terminator en este caso es la llamada a return.
 
 Para extender el borrow checker, se realiza una interpretación abstracta del MIR aplicando los análisis estáticos necesarios y recopilando la información.
 
@@ -107,3 +107,34 @@ Las principales reglas del modelo son las siguientes:
 Existen ciertas extensiones y optimizaciones que pueden realizarse a este modelo, sin embargo estas son las reglas que consideramos mínimas para detectar errores de aliasing en la mayor parte de programas y son las que implementaremos en la herramienta.
 
 Stacked borrows fue definido formalmente y esta verificado utilizando Coq. Además, como hemos mencionado el interprete MIRI \cite{miri} dentro de las variedades de chequeos que realiza, posee una implementación bastante robusta del modelo de Stacked Borrows donde se pueden realizar tests para comprobar su utilidad.
+
+\subsection{Análisis points-to}
+
+Existen un gran número de estudios y algoritmos realizados para el análisis del flujo de datos en los programas, y en especial para computar la información points-to. \cite{fastaliasinganalisis} establece que para realizar análisis en un programa que involucra punteros, es necesario tener información (segura) acerca de a donde apunta cada puntero. En general, mientras mas precisa se tenga la información de a donde apunta (points-to), más preciso van a ser los resultados obtenidos. Los análisis de flujo de datos como propagación de constantes, variables vivas, comprobaciones de alcance, etc. necesitan saber a donde una variable podría estar apuntando en cada declaración y operación.
+
+\cite{interprocedural} define que un Alias se produce cuando existe mas de un camino de acceso a un lugar en la memoria. Un camino de acceso es un identificador que apunta a un lugar especifico en la memoria, estos pueden ser punteros, expresiones conformadas por variables, etc. Dos caminos son must-alias si en una declaración S, si refieren a la misma locación en memoria en todas las instancias de ejecución de S. Dos caminos son may-alias en S si refieren a la misma locación en memoria en alguna de las ejecuciones de S, es decir, may-alias establece que pueden ser alias pero no lo asegura. La computación de may-aliases incluye los must-aliases como subconjuto. Los algoritmos a utilizar realizaran el calculo de los may-aliases y por el motivo anterior solamente se los mencionaran como alias.
+
+\cite{pointeranalysis} define dos tipos comunes de análisis de punteros, que son análisis de alias y de points-to.
+El análisis de alias computa un conjunto S que contenga los pares de variables (p,q) donde p y q pueden (o deben) apuntar a un mismo lugar en memoria. En cambio, el análisis points-to computa las relaciones apunta-a(p,x) donde p puede (o debe) apuntar a la locación de memoria de la variable x. Si bien ambos tienen el mismo objetivo, los métodos y algoritmos difieren. Nosotros utilizaremos un análisis points-to basado en la idea originalmente propuesta por Andersen, que es una de las más reconocidas y utilizadas para este propósito.
+
+El análisis points-to de Andersen es interprocedural, y no tiene en cuenta el contexto o flujo. Esto quiere decir que no tiene en cuenta el orden de las declaraciones del programa, y esto se realiza para mejorar el rendimiento ya que estos tipos de estudios pueden ser muy costosos en practica. Sin embargo, para mejorar la precisión y debido a que el MIR es generado de manera secuencial no haremos uso de esta característica.
+
+Para realizar este análisis, creamos un grafo dirigido para la representación de los aliases. Creamos un nodo para cada variable del programa, y haciendo una lectura secuencial de las declaraciones unimos utilizando aristas dirigidas cada vez que una variable X referencia a un valor apuntado por otra variable Y. De esta manera obtenemos todos los pares points-to(X,Y) donde X apunta a Y, y se ve reflejado en el grafo.
+
+Este comportamiento lo podemos apreciar en el ejemplo brindado por \cite{pointeranalysis}, observando el pseudo-programa y el grafo de Andersen construido.
+
+\begin{figure}%
+    \centering
+    \subfloat[\centering Pseudocodigo]{{\includegraphics[width=4cm,height=5cm,keepaspectratio]{Andersen_pseudoprograma} }}%
+    \qquad
+    \subfloat[\centering Grafo]{{\includegraphics[width=4cm,height=5cm,keepaspectratio]{Andersen_grafo} }}%
+    \caption{Creación de grafo points-to}%
+\end{figure}
+
+Una vez obtenido el grafo de points-to es posible saber cuales variables son alias. Aquellos que nodos que tengan más de una arista entrante indican que existe más de un camino para acceder al valor ubicado en ese lugar de la memoria, y por lo tanto, se produce alias. Además, si utilizamos estos datos en conjunto la información obtenida de Stacked Borrows simulando los lifetimes de las variables, podemos añadir precisión al análisis. Esto se debe a que al realizar points-to sabemos que puede ser alias, pero no es correspondiente asegurarlo. Sin embargo, gracias a Stacked Borrows podemos saber si algunas de las referencias involucradas en el alias dejaron de utilizarse y por lo tanto, indicar una mayor posibilidad de asegurar o descartar el problema de aliasing.
+
+Si bien este método es considerado interprocedural, es necesario tener en cuenta los aspectos mencionados por \cite{interprocedural}. Para que un análisis de flujo de datos sea interprocedural, se debe hacer uso del PCG (Program Call Graph), que es un multi-grafo en el cual cada procedimiento o función se representa como un único nodo y una arista (f,g) representa una potencial llamada a la función g desde el procedimiento f.
+Si bien en el HIR es más simple obtener y navegar el PCG que se describe, se añadiría una complejidad extra al manejar ambas representaciones intermedias simultáneamente. Por eso, para reemplazar el uso del PCG se utilizan los \textit{terminator} del MIR. Estos nos brindan toda la información necesaria de las diferentes llamadas a procedimientos externos, y nos permiten mediante el estudio de los argumentos actuales y formales asociar las variables y sus lugares compartidos en la memoria entre funciones. De esta manera además ganamos eficiencia y precision, ya que solamente tenemos en cuenta las llamadas a funciones que unicamente están relacionadas con el procedimiento que queremos analizar y que realmente sean utilizadas.
+
+\subsection{Otros análisis}
+
