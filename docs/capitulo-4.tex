@@ -1,1 +1,88 @@
 \chapter{La herramienta: diseño e implementación}
+
+\section{Diseño}
+
+La arquitectura de nuestro programa esta fuertemente inspirada en el diseño de las herramientas de Rudra \cite{rudra} y MirChecker \cite{li2021mirchecker}. Podemos dividir el proceso en tres etapas: Interfaz de usuario, Análisis estático y Comprobaciones finales.
+
+\begin{enumerate}
+    \item Interfaz de Usuario: En esta primera etapa se realiza la captura del código fuente del programa Rust que se desea analizar junto con las opciones a tener en cuenta, como por ejemplo, la función de entrada en caso de que no sea la principal. Para esto, se pueden utilizar dos formas. Una de ellas es ejecutar es compilar el proyecto y utilizarlo desde la llamada ``cargo run'' seguido del nombre del archivo .rs y opcionalmente el nombre de la función inicial. Esta es la forma mas sencilla y rápida para ejecutarla en archivos individuales. La otra posibilidad es instalar el proyecto como un subcomando del paquete cargo, y de esta manera llamar a la herramienta dentro de otro paquete. La ventaja de esto es que permitiría hacer análisis entre distintos archivos, y además se facilitaría el uso de otras herramientas del ecosistema Rust. Una vez capturada el código fuente del procedimiento a analizar, se genera el MIR optimizado del mismo junto con sus llamadas a funciones en caso de que existan y se prosigue a la siguiente etapa.
+    \item Análisis estáticos: Detrás de la interfaz de usuario, se encuentra el analizador estático implementado como una modificación del compilador de Rust con análisis adicionales. La segunda etapa comienza con el estudio del MIR, donde iterativamente se realiza una interpretación abstracta para cada uno de sus bloques básicos y se almacena en memoria todos los datos relacionados con los análisis a realizar. Estos datos pueden ser utilizados inmediatamente durante esta etapa para procesar resultados intermedios, o ser de utilidad en la siguiente etapa para sacar conclusiones finales post-análisis.
+    El estudio del MIR se realiza mediante la implementación del patron de diseño Visitor, que se encuentra definido como una Trait dentro del propio compilador de Rust en el paquete \textbf{rustc\_middle::mir::visit}. Este patron permite separar los algoritmos de la estructura del objeto en el que opera. Generalmente se utiliza para agregar nuevas operaciones a estructuras existentes sin modificarlas. Nosotros lo utilizaremos para navegar en el MIR, visitando cada uno de los bloques, sentencias y terminadores; y utilizar los datos de estas para realizar nuestros análisis.
+    Dentro de esta etapa se realizara los análisis de casteos, de cabecera de funciones, de Stacked Borrows y se comenzará a generar el grafo de Andersen para el análisis points-to de aliasing. Es posible que durante las comprobaciones se descubran errores de Stacked Borrows o Casteos, los cuales serán informados inmediatamente en pantalla para que sea más simple ubicar el error dentro del MIR y por lo tanto, dentro del código base.
+    \item Comprobaciones finales: Terminada la interpretación del MIR, se procede a realizar  estudios con los datos obtenidos durante la etapa anterior para determinar potenciales errores, e informar mediante mensajes generados acordes al problema encontrado en caso de que exista. Brindamos en formato .dot el grafo de Andersen, para que sea posible visualizar el mismo mediante el uso de herramientas como Graphviz. Además, procedemos a realizar el análisis points-to, que junto a los lifetimes obtenidos por Stacked Borrows podemos llegar a la conclusión de si posiblemente existe alias o no en alguna de las variables utilizadas y consecuentemente mostrar el resultado por pantalla.
+\end{enumerate}
+
+Este diseño permite lograr una gran escalabilidad, debido a la velocidad que se obtiene del enfoque estático de los análisis y a la modularidad que permitiría acoplar nuevos análisis sin realizar demasiados cambios a la estructura del proyecto. Además, gracias a trabajar con el MIR podemos hacer estudios con tipos genéricos sin conocimiento de las formas concretas de sus parámetros, lo cual no seria posible si se utilizara un análisis de una representación de bajo nivel como por ejemplo LLVM IR.
+
+\section{Implementación}
+
+La herramienta esta implementada totalmente en Rust, utilizando la version \textit{nightly-2022-01-01}. El principal analizador esta implementado como un driver personalizado del compilador de Rust. Trabaja como un compilador de Rust sin modificar al compilar las dependencias e injecta los algoritmos de análisis cuando se compila el paquete a estudiar.
+También coopera con Cargo, el manager de paquetes oficial de Rust, para brindar una experiencia de uso similar al resto de las herramientas integradas con el mismo.
+
+Dentro de la carpeta base del proyecto (\textit{/src}) podemos encontrar archivos relacionados con los análisis principales a realizar como stacked borrows y points-to, junto a dos carpetas \textit{bin} y \textit{mir\_visitor}. Dentro de \textit{bin} podemos encontrar la sección de Interfaz de Usuario, tenemos dos archivos donde cada uno se encarga de tomar el código fuente de un programa Rust y brindarle la información al analizador principal. Cada uno de estos archivos intenta obtener el código fuente de una manera distinta, uno lo hace directamente mientras que el otro utiliza cargo como intermediario para buscar dentro de un paquete.
+
+El analizador principal se encuentra dentro del archivo \textit{analyzer.rs}. Este se encarga de obtener MIR de la función a analizar, y en caso de que exista procede a realizar la interpretación abstracta de este. Este proceso comienza al crear un Visitor partiendo del Body del procedimiento principal y llamar a la función \textit{visit} que se encargará de acceder secuencialmente a cada una de las partes de la representación intermedia. El patrón visitor necesario para recorrer el MIR se encuentra implementado dentro de la carpeta \textit{mir\_visitor}. Allí se encuentran 4 archivos, de los cuales 3 están destinados a la interpretación y análisis de distintas partes (Bloques, Cuerpo y Terminadores) del MIR y un cuarto archivo con funciones de ayuda que es utilizada por los anteriores.
+
+La interpretación comienza primero por el cuerpo de la función, donde tenemos ya información del nombre de la misma, y de sus variables. Dentro de \textit{visit\_body} estudiamos las declaraciones locales y obtenemos todos los bloques básicos con sus datos. Luego, llamamos a \textit{visit\_basic\_block\_data} para cada uno de los bloques y respetando el orden. Adentro de los bloques, obtenemos la información de cada una de las sentencias y la existencia de algún terminator. Con esto, invocamos secuencialmente \textit{visit\_statement} donde visitaremos todas las sentencias de código del bloque. Estas pueden ser de varios tipos, pero el más común e importante son las asignaciones. Mediante \textit{visit\_assign} podemos saber si estas asignaciones corresponden a casteos, a referencias, a operaciones binarias o unarias, a creaciones de variables mutables o inmutables, etc. y con estos datos actualizar la información correspondiente a los análisis de \textbf{points-to} y \textbf{Stacked Borrows}. Durante cada asignación, además de actualizar los datos en memoria procedemos a imprimir por pantalla los datos del MIR para facilitar la visualización y detección de problemas. Finalizada la interpretación de cada una de las sentencias, procedemos a realizar la visita a los terminadores mediante \textit{visit\_terminator}. Al igual que las asignaciones, existen varios tipos de terminadores, como lo son return, aserciones, saltos de linea, etc. pero el más importante para nosotros son las llamadas a funciones ya que estas permiten son las que nos permiten realizar análisis interprocedurales y son el principal medio de cambio entre bloques básicos. Aquí podemos obtener información de los parámetros formales y hacer análisis de la cabecera de la función, y también es donde realizamos las preparaciones para hacer que la información que tenemos almacenada sobre los análisis que realizamos sea consistente entre diferentes bloques con diferentes designaciones a una misma variable.
+
+\begin{algorithm}
+    \caption{Algoritmo de visita o recorrido del MIR}
+    \DontPrintSemicolon
+    \KwIn{Optimized MIR (CFG)}
+    \SetKwProg{Pn}{Function}{:}{\KwRet}
+    \SetKwFunction{FBody}{VisitBody}
+    \Pn{\FBody{$body$}}{
+        Get function information\;
+        \ForEach{$variable$ \textbf{in} $body.local\_declarations$}{
+            Get variable debug info
+        }
+        \ForEach{$block$ \textbf{in} $body.basic\_blocks$}{
+            VisitBlock($block$)
+        }
+    }
+    \SetKwFunction{FBlock}{VisitBlock}
+    \Pn{\FBlock{$block$}}{
+        \ForEach{$statement$ \textbf{in} $block.statements$}{
+            VisitStatement($statement$
+        }
+        VisitTerminator($block.terminator$)
+    }
+    \SetKwFunction{FStatement}{VisitStatement}
+    \Pn{\FStatement{$stmt$}}{
+        \If{$stmt$ \textbf{is} an Assignment}{
+            \Switch{$stmt.assign$}{
+                \lCase{Use\tcc*{Creation or mutation of a variable}}{
+                    Update state\tcc*[r]{Data used for analysis (Stacked Borrows or points-to)}
+                }
+                \lCase{Ref\tcc*{Use of a mutable or immutable reference}}{
+                    Update state
+                }
+                \uCase{Cast}{
+                    CastBehaviourCheck()\;
+                    Update state
+                }
+                \dots
+            }
+        }
+    }
+    \SetKwFunction{FTerminator}{VisitTerminator}
+    \Pn{\FTerminator{$term$}}{
+        \If{$term$ \textbf{is} a Function call}{
+            $fcall\gets term.call$\;
+            Get function info;\;
+            \ForEach{$arg$ \textbf{in} $fcall.arguments$}{
+                VisitArgument($arg$)
+            }
+            CheckFunctionProfile()\;
+            Do preparation for inteprocedural analysis\;
+            VisitBody($fcall.body$)\tcc*[r]{Visit the function}
+            Update state
+        }
+        \dots
+    }
+\end{algorithm}
+
+Una vez visitados todos los bloques básicos involucrados con la función, retornamos al archivo \textit{analyzer.rs} donde procedemos a realizar los estudios de los datos obtenidos post-análisis. Aquí realizaremos el análisis de aliasing del grafo points-to y lo compararemos con los lifetimes obtenidos de Stacked Borrows para brindar información de la posible existencia de alias. Además, utilizando el paquete \textit{dot} procederemos a imprimir el grafo en formato .dot para que sea más sencillo visualizarlo.
+
+
+

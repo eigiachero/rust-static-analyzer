@@ -38,7 +38,6 @@ impl<'tcx> MirVisitor<'tcx> {
                 }
 
                 println!("\ncall {:#?}", &func);
-                // To-do: analyze function profile, may-alias
 
                 // Visit arg
                 let mut index = 1;
