@@ -95,7 +95,7 @@ Este programa viola el principio de la debido a un uso de la referencia \textit{
 
 Para llevar esta idea a cabo, Stacked Borrows define un modelo operacional. Primero se debe ser capaz de distinguir las referencias que apuntan a un mismo lugar de la memoria; por eso se asume que todas las referencias son marcadas con un ID único cuando son creadas, y este se preserva a medida que la referencia es copiada. Luego, en memoria se debe almacenar una pila que almacenará los IDs de las referencias junto a información para distinguir el tipo de item (Unique, SharedReadOnly o SharedReadWrite) que es.
 
-Las principales reglas del modelo son las siguientes:
+Las principales reglas del modelo \label{stackedrules} son las siguientes:
 \begin{itemize}
     \item (new-mutable-ref) Cada vez que una nueva referencia mutable es creada (\&mut expr) de algún valor referente existente, primero que nada se considera \textit{uso} de ese referente. Luego se elige un ID nuevo para la referencia, y se la coloca junto a su tipo (Unique) en el tope de la pila.
     \item (new-mutable-raw) Cada vez que una variable mutable plana (raw pointer) es creada mediante un casteo (expr as \*mut T) a partir de una referencia mutable (\&mut T) con el valor de algun referente, primero es considerada un uso de esa referencia mutable. Luego se añade la referencia del tipo SharedReadWrite al tope de la pila.

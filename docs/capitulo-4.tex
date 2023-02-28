@@ -84,5 +84,35 @@ La interpretación comienza primero por el cuerpo de la función, donde tenemos 
 
 Una vez visitados todos los bloques básicos involucrados con la función, retornamos al archivo \textit{analyzer.rs} donde procedemos a realizar los estudios de los datos obtenidos post-análisis. Aquí realizaremos el análisis de aliasing del grafo points-to y lo compararemos con los lifetimes obtenidos de Stacked Borrows para brindar información de la posible existencia de alias. Además, utilizando el paquete \textit{dot} procederemos a imprimir el grafo en formato .dot para que sea más sencillo visualizarlo.
 
+\subsection{Análisis estáticos}
 
+Los principales análisis que realiza la herramienta son de Stacked Borrows y Points-to. Stacked borrows esta implementado dentro del archivo \textit{stacked\_borrows.rs} de una manera simple, consta de una pila la cual se va actualizando a medida de que nuestro interprete detecta creaciones y usos de los distintos tipos de variables y referencias. A su vez, llevamos un vector con los nombres reales de las variables para que sea más fácil identificarlas en vez de usar la representación interna. La pila esta implementada utilizando el paquete \textbf{VecDeque} el cual se encuentra en la librería estándar de Rust, garantizando asi la velocidad y seguridad. Además de implementar las reglas del modelo explicadas en \ref{stackedrules}, agregamos una función adicional muy simple llamada \textit{is\_live(tag)} la cual corrobora si una variable se encuentra en la pila; y por lo tanto, la variable se encuentra viva.
 
+De forma similar, en el archivo \textit{points\_to.rs} se encuentra la implementación del análisis de alias points-to.
+Para la implementación del grafo, utilizamos el paquete \textit{petgraph::Graph} que si bien no es parte de la librería estándar, es una de las librerías de grafos más usadas y posee una documentación ampliamente detallada. Al igual, que en Stacked Borrows cada vez que se produce una asignación, corroboramos si se crea o modifica una variable para realizar cambios en el grafo. En el caso de que se cree una variable o referencia creamos un nodo y modificamos las aristas en caso de ser necesario. Cuando termina la ejecución del programa y se recorrieron todos los bloques y sentencias, procedemos a realizar el chequeo de si existen variables que son alias. Esto lo realizamos buscando todos los nodos que tengan más aristas entrantes que salientes; es decir, que existan más de 1 camino por el cual se pueda acceder a un nodo, dentro de la función \textbf(aliasing\_test()) la cual retorna la lista de variables que pueden contener alias. Una vez obtenida esta lista, chequeamos si algunas de estas no están vivas con la información de Stacked Borrows e informamos todo por pantalla.
+
+Durante el estudio de los terminadores, precisamente dentro de las llamadas a funciones en el archivo \textit{MirVisitor/terminator\_visitor.rs}, realizamos el análisis de la cabecera de la función a invocar. Este consiste en corroborar que no exista alias dentro de los parámetros de la misma, ya que si existiera podría indicar un potencial error de diseño de la función, especialmente si ambos son referencias mutables. Para hacer este análisis, tomamos los pares de argumentos y utilizando el grafo de points-to, verificamos si existe algún camino que conecte ambos nodos, dentro de la función \textit{are\_alias(a,b)}. En caso de que exista aliasing dentro de los parámetros de la función, se procede a comprobar si alguna ambas referencias son mutables y se muestra un mensaje en pantalla informando de la situación.
+
+\begin{algorithm}
+    \caption{Algoritmo de chequeo si dos variables en particular son alias}
+    \DontPrintSemicolon
+    \KwOut{$true$ if are alias}
+    \SetKwProg{Fn}{Function}{:}{\KwRet}
+    \SetKwFunction{FBody}{AreAlias($a$,$b$)}
+    \Fn{\FBody}{
+        \lIf{$a$ or $b$ not exists}{\Return{false}}\;
+
+        $DFS_a \gets graph.dfs(a)$
+        \tcc*[r]{Get all nodes connected to $a$ using Deep First Search}
+
+        $DFS_b \gets graph.dfs(b)$
+        \tcc*[r]{Get all nodes connected to $b$ using Deep First Search}\;
+
+        \ForEach{node \textbf{in} $DFS_a$}{
+            \lIf{$DFS_b$.contains(node)}{\Return{true}}
+        }
+        \Return{false}
+    }
+\end{algorithm}
+
+El último de los análisis que realizamos es el chequeo de cambios de representación durante el uso de casts en Unsafe.Su implementación la podemos encontrar en el archivo \textit{MirVisitor/block\_visitor.rs}, y ocurre durante el tipo especial de asignaciones que poseen el MIR distingue como Cast. Además de utilizar la información para la actualización de Stacked Borrows y points-to, se accede a los datos de la representación de las variables involucradas y se obtiene la cantidad de bytes que necesitan. Una vez obtenida las cantidades, mediante una consulta al MIR, se procede a compararlas y en caso de que exista una diferencia se muestra el mensaje por pantalla informando del posible error.
