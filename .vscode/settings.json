@@ -4,7 +4,8 @@
         "derefenciar",
         "estas",
         "interprocedural",
-        "structs"
+        "structs",
+        "tuplas"
     ],
     "cSpell.language": "en,es-ES"
 }

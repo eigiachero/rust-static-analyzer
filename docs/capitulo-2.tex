@@ -1,12 +1,23 @@
 \chapter{El sistema de tipos de Rust}
 
-Rust es un lenguaje de tipado estático, es decir, realiza la especificación y comprobación de tipos durante el tiempo de compilación y no mientras el programa se esta ejecutando. Además, provee una herramienta muy potente que es la inferencia de tipos. Gracias a esto no es necesario declarar los tipos de las variables de manera explicita en la mayor parte de los casos, sino que Rust infiere que clase de valores mediante un análisis del contexto durante la compilación del programa.
+Rust es un lenguaje de tipado estático, es decir, realiza la especificación y comprobación de tipos durante el tiempo de compilación y no mientras el programa se esta ejecutando. Además, provee una herramienta muy potente que es la inferencia de tipos. Gracias a esto no es necesario declarar los tipos de las variables de manera explicita en la mayor parte de los casos, sino que Rust infiere que clase de valores mediante un análisis del contexto durante la compilación del programa. Además, esto ayuda a prevenir errores comunes como los errores de tipo y mejora la seguridad y eficiencia del código.
 
 A pesar de ser un lenguaje de tipado estático, provee a través de la palabra reservada \textbf{dyn} la posibilidad de realizar el chequeo de tipos en tiempos de ejecución. Si bien al hacer esto perdemos las ventajas de velocidad y seguridad que Rust brinda al realizar los chequeos estáticos, se otorga mayores libertades a la hora de escribir código. Esto puede ser util especialmente en casos donde cierta información, como por ejemplo el tamaño de un valor, es desconocida durante la compilación.
 
+Los tipos primitivos de Rust son los siguientes:
+\begin{enumerate}
+    \item Enteros: Los enteros son tipos numéricos que no tienen parte fraccionaria. En Rust, los enteros se pueden dividir en dos categorías: enteros con signo (signed) y enteros sin signo (unsigned). Los enteros con signo son aquellos que pueden ser positivos, negativos o cero, mientras que los enteros sin signo son aquellos que solo pueden ser positivos o cero. Los enteros pueden ser: u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, isize y usize. El carácter i al comienzo representa a los con signo mientras que el carácter u indica los enteros sin signo, ambos seguidos del tamaño de bits que utilizan.
+    \item  Flotantes: Los flotantes son tipos numéricos que tienen una parte fraccionaria. En Rust, los flotantes se dividen en dos categorías: flotantes de precisión simple (f32) y flotantes de doble precisión (f64).
+    \item  Booleanos: Los booleanos son tipos que solo pueden tener dos valores: true o false. El tipo booleano en Rust es bool.
+    \item  Caracteres: Los caracteres son tipos que representan un solo carácter Unicode. El tipo caracter en Rust es char.
+    \item Cadenas: Las cadenas son tipos que representan una secuencia de caracteres Unicode. El tipo cadena en Rust es str. Además, hay dos tipos de cadenas adicionales: String, que es una cadena que se puede cambiar, y \&str, que es una referencia a una cadena.
+\end{enumerate}
+
+Los tipos compuestos son aquellos que pueden agrupar varios valores en un solo tipo. Rust tiene dos tipos compuestos primitivos: tuplas y arreglos. Las tuplas agrupan varios valores en una sola variable donde cada valor puede tener un tipo diferente. Los arreglos son tipos que almacenan una cantidad fija de valores del mismo tipo. A diferencia de las tuplas, todos los valores deben tener el mismo tipo.
+
 \section{Polimorfismo y Traits}
 
-El lenguaje Rust realiza una implementación un poco distinta del paradigma de programación orientada a objetos. Mediante la creación de \textbf{structs} y \textbf{enum} se almacenan los datos, y utilizando los bloques de implementación se les provee de métodos y funciones a estos. Los bloques de implementación se generan mediante la palabra reservada \textbf{impl}. Esto lo podemos ver apreciado en el siguiente ejemplo:
+El lenguaje Rust realiza una implementación un poco distinta del paradigma de programación orientada a objetos. Rust se distingue de los lenguajes más puros separando la definición de estructuras de datos y sus características, de la implementación de los métodos de esa misma clase o estructura. Mediante la creación de \textbf{structs} y \textbf{enum} se almacenan los datos, y utilizando los bloques de implementación se les provee de métodos y funciones a estos. Los bloques de implementación se generan mediante la palabra reservada \textbf{impl}. Esto lo podemos ver apreciado en el siguiente ejemplo:
 
 \begin{lstlisting}[language=Rust]
 struct Square {
@@ -31,9 +42,10 @@ pub fn main() {
 \end{lstlisting}
 
 Rust, a diferencia de otros lenguajes orientados a objetos como Java o C++, no implementa el concepto de Herencia. Este es un mecanismo por el cual un objeto puede heredar elementos de otra definición de objetos, para de esta manera, acceder a los datos e implementaciones de un objeto ``padre'' sin tener que redefinirlos nuevamente.
-Esta fue una decision tomada nuevamente teniendo en cuenta la seguridad, ya que si no se tiene cuidado es posible compartir mas información de la deseada entre las clases y subclases. Para implementar el polimorfismo, Rust toma otro enfoque distinto mediante el uso de Traits.
+Este mecanismo esta siendo criticado y dejado de utilizar, ya que a menudo se corre el riesgo de compartir más código del necesario entre las distintas subclases. A su vez, limita la flexibilidad en el diseño y puede provocar errores al llamarse métodos que no apliquen a una subclase.
+El sistema de tipos de Rust en cambio utiliza el concepto de polimorfismo paramétrico, que refiere a la capacidad de una función de recibir por parámetro valores de diferentes tipos. Además de evitar las desventajas del uso de Herencia, esta decisión permite mayor libertad a la hora de hacer uso de covarianza (hacer uso de un tipo más derivado o especifico) y contravarianza (hacer uso de un tipo menos derivado o especifico).
 
-\cite{rustbook} definen una trait o rasgo define la funcionalidad que un tipo particular tiene y puede compartir con otros. Se utilizan los traits para definir comportamientos compartidos de manera abstracta. Podemos usarlos para especificar un tipo genérico, que puede ser aplicado para todo el que cumpla con los rasgos marcados. Tienen una similitud a las interfaces, pero con algunas diferencias.
+Para implementar el polimorfismo, Rust toma otro enfoque distinto mediante el uso de genericidad y Traits. \cite{rustbook} definen una trait o rasgo define la funcionalidad que un tipo particular tiene y puede compartir con otros. Se utilizan los traits para definir comportamientos compartidos de manera abstracta. Podemos usarlos para especificar un tipo genérico, que puede ser aplicado para todo el que cumpla con los rasgos marcados. Tienen una similitud a las interfaces, pero con algunas diferencias. Los Traits de Rust se acercan más a los type-classes de Haskell que a las interfaces de Java.
 
 El comportamiento de un tipo esta marcado por las funciones que proporciona. Diferentes tipos comparten el comportamiento si se puede llamar las mismas funciones en todos esos tipos. Los traits o rasgos son una manera de agrupar estos métodos y definir el conjunto de comportamiento.
 
@@ -129,7 +141,7 @@ Al igual que las referencias, los raw pointers pueden ser mutables o inmutables 
 
 En este simple ejemplo podemos ver como se crean punteros planos usando la palabra reservada \textbf{as} para hacer un casteo de una referencia mutable o inmutable a su raw pointer correspondiente. También podemos observar que no es necesario crear punteros planos dentro de un bloque unsafe ya que no genera ningún peligro; sin embargo, cuando tratamos de acceder a los valores que apuntan pueden generarse comportamientos inadecuados en el programa y por lo tanto deben enmarcarse en unsafe. En el ejemplo, usamos el operador \textbf{*} para acceder a la información apuntada por una referencia o puntero plano, y asi mostrarla por pantalla usando la macro \textit{println!}.
 
-Podemos notar que ambos punteros mutable e immutable apuntan a la misma direccion de memoria, donde value esta almacenada. Si hubiésemos utilizado referencias, el programa no habría compilado ya que se rompen las reglas del \textit{borrow-checker}. En el ejemplo anterior estamos accediendo a una variable de manera inmutable y luego podemos potencialmente modificarla mediante el puntero mutable, lo que produciría una condición de carrera.
+Podemos notar que ambos punteros mutable e immutable apuntan a la misma dirección de memoria, donde value esta almacenada. Si hubiésemos utilizado referencias, el programa no habría compilado ya que se rompen las reglas del \textit{borrow-checker}. En el ejemplo anterior estamos accediendo a una variable de manera inmutable y luego podemos potencialmente modificarla mediante el puntero mutable, lo que produciría una condición de carrera.
 
 El siguiente fragmento de código seria rechazado por el compilador si no se hiciera uso del unsafe:
 \begin{lstlisting}[language=Rust]
@@ -169,9 +181,4 @@ Rudra \cite{rudra} es un analizador estático el cuál su objetivo principal es 
 Otro proyecto a tener en cuanta es MirChecker \cite{li2021mirchecker}, que al igual que Rudra y este trabajo, utiliza un análisis estático del MIR para crear un framework automatizado para la detección de bugs. Realizan una cantidad muy grande de tests en donde comprueban errores matemáticos, lógicos, loops infinitos, accesos fuera de rangos, usos después de liberación de memoria, etc. Esta herramienta no es tan utilizada como MIRI o Rudra, pero al ser muy diversa es útil para detectar muchos errores.
 
 Todos estos proyectos tratan de enfocar los conflictos que pueden encontrarse al hacer uso de Unsafe Rust, e inclusive utilizan métodos y enfoques similares, pero cada uno apunta a resolver obstáculos diferentes. Este proyecto toma en cuenta las bases sentadas por estas herramientas, y nos enfocaremos a atacar problemas especificos diferentes que creemos que son igual de importantes, y esperamos que el uso conjunto con alguna de las anteriores permita abarcar y encontrar una mayor cantidad de errores de código.
-
-
-
-
-
 

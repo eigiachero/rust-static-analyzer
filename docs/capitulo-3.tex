@@ -18,7 +18,7 @@ La siguiente parte es la construcción del MIR (Mid-Level Intermediate Represent
 
 A continuación se realiza lo que es conocido por la generación de código o \textit{codegen}, que consiste en transformar las representaciones de alto nivel a un binario executable. \textbf{rustc} utiliza \textbf{LLVM} para esto. Se comienza convirtiendo el MIR en LLVM IR (LLVM Intermediate Representation) para luego pasárselo a LLVM, el cual realiza más optimizaciones, y emitir el código de maquina. Este es básicamente código assembler con algunos tipos y anotaciones añadidos. Los diferentes binarios/bibliotecas luego son unidos (linked) para crear el binario final.
 
-\section{Análisis estáticos sobre el MIR}
+\section{Análisis estáticos}
 
 \subsection{MIR}
 
