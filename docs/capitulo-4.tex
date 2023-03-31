@@ -1,5 +1,10 @@
 \chapter{La herramienta: diseño e implementación}
 
+Nuestra herramienta de análisis estáticos para el lenguaje Rust se encuentra en el repositorio de github https://github.com/Ezex360/rust-static-analyzer. Dentro del repositorio se pueden encontrar el código fuente del programa, algunos ejemplos con los que probar la herramienta, un instructivo simple de instalación/uso y la presente documentación.
+El proyecto esta programado completamente en el lenguaje Rust, y esta basado en la version nightly 2022-01-01.
+
+A la hora de realizar la implementación tuvimos en cuenta los patrones de diseño de programación \cite{ingienieriasoftware} y además, las practicas utilizadas por las herramientas ya desarrolladas de análisis estáticos en código Rust. A su vez, tuvimos en cuenta la documentación del compilador rustc \cite{rustcdevelopment} que brinda especificaciones para el acceso y manejo de toda la información y datos relacionados con el MIR.
+
 \section{Diseño}
 
 La arquitectura de nuestro programa esta fuertemente inspirada en el diseño de las herramientas de Rudra \cite{rudra} y MirChecker \cite{li2021mirchecker}. Podemos dividir el proceso en tres etapas: Interfaz de usuario, Análisis estático y Comprobaciones finales.
