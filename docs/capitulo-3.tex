@@ -1,6 +1,6 @@
 \chapter{Extendiendo el borrow checker}
 
-\section{Entendiendo los procesos del compilador}
+\section{Etapas del proceso de compilación}
 
 El compilador de Rust según \cite{rustcdevelopment} se diferencia del resto, ya que hace procesos que otros no realizan (borrow-checking) y también toma algunas decisiones no convencionales. El proceso de compilación de un programa comienza al invocar el comando \textbf{rustc} junto al código fuente de un programa y los parámetros. El modulo \textit{rustc\_driver} se encarga de captar los argumentos y definir la configuración que se utilizará en el resto del procedimiento.
 
