@@ -1,5 +1,9 @@
 \chapter{Extendiendo el borrow checker}
 
+El borrow checker es un componente del compilador de Rust que verifica que el código fuente cumpla con las reglas de Ownership y Borrowing del lenguaje. En otras palabras, el borrow checker analiza el código para asegurarse de que no haya más de una referencia mutable a un mismo valor al mismo tiempo, que las referencias no sobrevivan al valor al que hacen referencia y que no haya referencias inválidas. Si el borrow checker encuentra algún problema, el compilador genera un error de compilación para ayudar al programador a corregir el código. El borrow checker es una parte esencial de Rust que ayuda a prevenir errores comunes de programación, como la corrupción de memoria y los errores de concurrencia.
+
+Nuestro objetivo es extender la funcionalidad del mismo incorporando nuevos análisis estáticos como Stacked Borrows\cite{stackedborrows} para poder tratar de capturar nuevos errores enfocándonos en los problemas de aliasing, y además, poder realizar estas detecciones en código unsafe donde el sistema de borrow-checking se encuentra deshabilitado y por lo tanto se pierden estas ventajas de seguridad en el manejo de memoria intrínsecas al lenguaje.
+
 \section{Etapas del proceso de compilación}
 
 El compilador de Rust según \cite{rustcdevelopment} se diferencia del resto, ya que hace procesos que otros no realizan (borrow-checking) y también toma algunas decisiones no convencionales. El proceso de compilación de un programa comienza al invocar el comando \textbf{rustc} junto al código fuente de un programa y los parámetros. El modulo \textit{rustc\_driver} se encarga de captar los argumentos y definir la configuración que se utilizará en el resto del procedimiento.
@@ -19,6 +23,10 @@ La siguiente parte es la construcción del MIR (Mid-Level Intermediate Represent
 A continuación se realiza lo que es conocido por la generación de código o \textit{codegen}, que consiste en transformar las representaciones de alto nivel a un binario executable. \textbf{rustc} utiliza \textbf{LLVM} para esto. Se comienza convirtiendo el MIR en LLVM IR (LLVM Intermediate Representation) para luego pasárselo a LLVM, el cual realiza más optimizaciones, y emitir el código de maquina. Este es básicamente código assembler con algunos tipos y anotaciones añadidos. Los diferentes binarios/bibliotecas luego son unidos (linked) para crear el binario final.
 
 \section{Análisis estáticos}
+
+El análisis estático de programas es una técnica que se utiliza para examinar el código fuente de un programa sin necesidad de ejecutarlo, con el objetivo de encontrar errores o posibles problemas. Algunas de las ventajas del análisis estático incluyen la detección temprana de errores, la identificación de vulnerabilidades de seguridad y la mejora de la eficiencia del código. Las herramientas de análisis estático se utilizan comúnmente en muchos lenguajes de programación, incluyendo Rust, y pueden detectar una amplia gama de errores de programación, como errores de sintaxis, errores de tipo, fugas de memoria y problemas de concurrencia, entre otros.
+
+En esta sección describiremos con detalle los diferentes conceptos y particularidades de los análisis estáticos que implementaremos en nuestra herramienta como lo son Stacked Borrows y análisis de alias points-to, y además nos expandiremos en la definición del MIR y su amplia utilidad como base para el desarrollo de nuestro programa. 
 
 \subsection{MIR}
 

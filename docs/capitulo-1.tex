@@ -1,5 +1,11 @@
 \chapter{Introducción}
 
+La programación en Rust se ha vuelto cada vez más popular debido a su capacidad para crear programas seguros y eficientes. Sin embargo, cuando se trata de programación en Rust, una de las mayores preocupaciones es evitar errores que puedan poner en riesgo la seguridad del programa. Uno de los mayores desafíos en la programación en Rust es el manejo de código unsafe, ya que este código se encuentra fuera del alcance de las verificaciones de seguridad del compilador.
+
+En este trabajo, se aborda el problema de los errores de unsafe en Rust, con el objetivo de mejorar la seguridad y la estabilidad de los programas escritos en este lenguaje. Se explorarán diferentes técnicas para detectar y capturar errores en el código Rust, enfocándonos particularmente en el análisis estático de código. Además, se evaluarán estas técnicas en una variedad de casos de estudio específicos para determinar su efectividad en la detección de errores de unsafe en diferentes contextos.
+
+En última instancia, este trabajo de tesis busca proporcionar una comprensión más profunda de los desafíos asociados con la programación unsafe en Rust y presentar una solución practica a ciertos problemas particulares de unsafe mediante la creación de una herramienta especializada y eficiente utilizando técnicas de análisis estáticos. Al mejorar la capacidad de los programadores para detectar y corregir estos errores, se espera que se promueva el uso de Rust como un lenguaje seguro y confiable para el desarrollo de software crítico.
+
 \section{El lenguaje de programación Rust}
 
 Rust es un lenguaje de programación moderno, compilado, multiparadigma y de propósito general. Este comenzó siendo desarrollado por Mozilla, y vio sus primeras versiones hace más de una década en el 2010, siendo sus mayores influencias C++, Haskell y Erlang. Este lenguaje ha tenido un gran impacto en la comunidad de programadores, y ha sido votado como el “lenguaje de programación mas querido” en Stack Overflow desde el año 2016 hasta el 2022.
@@ -16,6 +22,20 @@ El presente trabajo tiene como objetivo crear una herramienta para el análisis 
 
 
 \section{Fundamentos de Rust}
+
+Una de las principales características de Rust es su sistema de tipos estático y fuerte, que permite al compilador detectar errores de programación en tiempo de compilación en lugar de tiempo de ejecución. Además, Rust cuenta con un modelo de memoria que ayuda a evitar errores comunes como la corrupción de memoria y los accesos fuera de límites.
+Además, Rust se integra bien con otros lenguajes y sistemas, lo que lo hace ideal para desarrollar software de sistema y aplicaciones de alto rendimiento.
+
+Los fundamentos de Rust incluyen:
+\begin{itemize}
+  \item \textit{Ownership} o Propiedad única: Cada valor en Rust tiene un único propietario (owner), lo que significa que solo una variable puede poseer ese valor en cualquier momento dado. Esto elimina la posibilidad de errores de memoria comunes, como la liberación de memoria doble.
+  \item Sistema de tipos estáticos: Rust utiliza un sistema de tipos estáticos para detectar errores de tiempo de compilación y garantizar que el código sea seguro y eficiente.
+  \item Código unsafe: Rust permite el código unsafe para acceder a memoria de bajo nivel, pero requiere que este se marque y se verifique cuidadosamente para garantizar la seguridad del programa.
+  \item Sin recolector de basura: Rust no tiene un recolector de basura automático como otros lenguajes de programación, en su lugar utiliza el modelo de \textit{Ownership} para liberar la memoria no utilizada y además, permitir al programador tener un control más fino sobre la gestión de la memoria en su programa.
+\end{itemize}  
+
+El sistema de \textit{Ownership} o Propiedad Única se basa en el concepto de move semantics, lo que significa que cuando se asigna un valor con propiedad única a otra variable, la propiedad se transfiere a la nueva variable y la variable original ya no puede acceder a ese valor, evitando así problemas de concurrencia y corrupción de memoria. Este se explicara con mayor profundidad en la siguiente subsección. 
+
 \subsection{Move semantics}
 
 \textit{Ownership} es un conjunto de reglas que dictan como el lenguaje de Rust maneja la memoria. Como mencionamos en anteriormente es una alternativa a los garbage collector que utilizan muchos otros lenguajes modernos, permite detectar el punto en el que una variable debería dejar de usarse y liberarla de la memoria. La diferencia es que Rust realiza los chequeos necesarios de manera estática, lo que brinda un rendimiento y capacidad de identificar problemas mayor. El encargado de verificar que estas reglas se cumplan, es el \textit{borrow-checker}, que cuando detecta un incumplimiento de las mismas, no permite que el programa compile e informa del problema encontrado.

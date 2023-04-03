@@ -1,7 +1,11 @@
 \chapter{Resultados obtenidos y trabajos futuros}
+
+Se ha desarrollado una herramienta que permite analizar de forma automatizada el código en busca de patrones y prácticas peligrosas, lo que llevaría a una reducción en el número de errores encontrados en el proceso de comprobaciones de código Rust. En este capítulo trataremos de demostrar los distintos análisis realizados por la herramienta brindando ejemplos concretos de algunos de sus casos de usos. También exploraremos las diferentes posibilidades a futuro que este trabajo pueda tener, y abordaremos los resultados finales del proyecto. 
+
 \section{Casos de uso}
-// A continuación se analizan ejemplos de programas que la herramienta detecta algo asi.
-// Agregar conclusiones y trabajos futuros.
+
+La herramienta tiene una amplia variedad de casos de uso gracias a los diversos análisis estáticos implementados en la misma. A continuación se analizan ejemplos de programas con errores que la herramienta detecta, explicando cuál es el problema a resolver y cómo se abordo la solución. Además, observaremos el código fuente de entrada y la salida por pantalla de nuestra herramienta para cada caso.
+
 \subsection{Stacked Borrows y Análisis del perfil de funciones}
 Nuestra herramienta utiliza Stacked Borrows y un análisis dedicado a los enunciados de las funciones para detectar errores de aliasing. Esto lo podemos apreciar en el siguiente ejemplo.
 
