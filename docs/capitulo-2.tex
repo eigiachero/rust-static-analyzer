@@ -47,7 +47,16 @@ El sistema de tipos de Rust en cambio utiliza el concepto de polimorfismo param�
 
 Para implementar el polimorfismo, Rust toma otro enfoque distinto mediante el uso de genericidad y Traits. \cite{rustbook} definen una trait o rasgo define la funcionalidad que un tipo particular tiene y puede compartir con otros. Se utilizan los traits para definir comportamientos compartidos de manera abstracta. Podemos usarlos para especificar un tipo genérico, que puede ser aplicado para todo el que cumpla con los rasgos marcados. Tienen una similitud a las interfaces, pero con algunas diferencias. Los Traits de Rust se acercan más a los type-classes de Haskell que a las interfaces de Java.
 
-El comportamiento de un tipo esta marcado por las funciones que proporciona. Diferentes tipos comparten el comportamiento si se puede llamar las mismas funciones en todos esos tipos. Los traits o rasgos son una manera de agrupar estos métodos y definir el conjunto de comportamiento.
+El comportamiento de un tipo esta marcado por las funciones que proporciona. Diferentes tipos comparten el comportamiento si se puede llamar las mismas funciones en todos esos tipos. Los traits o rasgos son una manera de agrupar estos métodos y definir el conjunto de comportamiento. 
+
+Algunos de los traits más comunes en Rust incluyen:
+\begin{itemize}
+    \item Copy: Este trait indica que un tipo puede ser copiado de forma segura utilizando una simple operación de copia de bits. Este trait es muy común en Rust y se utiliza en muchos tipos de datos básicos, como enteros y flotantes.
+    \item  Clone: Este trait indica que un tipo puede ser clonado, es decir, copiado a un nuevo valor independiente del original. Este trait se utiliza comúnmente en tipos de datos más complejos, como estructuras y tuplas.
+    \item PartialEq y Eq: Estos traits indican que un tipo puede ser comparado por igualdad (==) y desigualdad (!=).
+    \item PartialOrd y Ord: Estos traits indican que un tipo puede ser comparado por orden, es decir, si un valor es menor, mayor o igual a otro valor. PartialOrd es un subtrait de Ord, que indica que un tipo puede ser parcialmente ordenado.
+    \item Debug: Este trait permite imprimir valores de un tipo de datos para depuración o registro. Se utiliza comúnmente en Rust para imprimir mensajes de error y depuración.
+\end{itemize}
 
 En el ejemplo anterior, la clase Square implementa el método area, y si quisiéramos crear una clase Rectangle también deberíamos implementar exactamente la misma función. En el caso de una implementación de Circle o Circulo, la información que almacena el objeto y el cuerpo de la función \textit{} seria un poco diferente, pero todas estas clases aunque tengan sus particularidades comparten los rasgos de una Figure o figura geométrica.
 

@@ -183,3 +183,22 @@ digraph {
 	\end{tikzpicture}
 \end{center}
 \end{minipage}
+
+\section{Trabajos Futuros}
+
+La herramienta de análisis estático tiene un diseño modular que permitiría añadir y modificar la funcionalidad de la misma de una manera simple, lo que conlleva a poder mejorarla añadiendo características y funcionalidades. Las mejoras y trabajos futuros podrían incluir:
+\begin{itemize}
+    \item Mayor cobertura de características inseguras de Rust: La herramienta podría ser mejorada para detectar otros problemas asociados con la programación de código Unsafe. Algunos de los problemas podrían ser asociados al manejo de memoria además del análisis de alias que ya se realiza, o por ejemplo atacar problemas relacionados con traits inseguras.
+    \item Soporte para otras plataformas: Rust es un lenguaje multiplataforma, sin embargo el programa solamente contempla el sistema operativo Linux, por este motivo, podría ser adaptado para funcionar en otras plataformas como Windows.
+    \item Integración con IDEs: Nuestra utilidad podría ser integrada con alguno de los IDEs populares como Visual Studio Code para proporcionar un análisis en tiempo real del código, ayudando asi a la programación de Rust de manera más segura.
+    \item Transformaciones de código: La herramienta podría funcionar como esqueleto para el desarrollo de otras plataformas. Una de las grandes utilidades de tener el acceso al MIR y sus datos, es poder realizar transformaciones del código fuente de un programa Rust para por ejemplo al reconocer un error o uso de funciones deprecadas cambiarlas automáticamente por lineas de código que realicen la misma funcionalidad pero sean correctas. Otro acercamiento también podría ser la utilización del analizador como un interprete para poder transformar código Rust a otros lenguajes de programación.  
+\end{itemize}
+    
+En resumen, existen muchas oportunidades de mejora para la herramienta, pero el objetivo principal sería mejorar la precisión y eficacia de la herramienta, y hacerla más fácil de integrar en los flujos de trabajo de desarrollo existentes.
+
+\section{Conclusión}
+
+Rust es un lenguaje ampliamente considerado como seguro en lo que respecta a problemas relacionados con el manejo de la memoria. Sin embargo, como pudimos observar debido a las dificultades intrínsecas del código unsafe, esta creencia no es del todo correcta y nosotros con esta herramienta tratamos de atacar algunos de los problemas asociados. Creemos particularmente que los errores relacionados con el aliasing de variables debido a la deshabilitación del Borrow Checker podrían generar grandes vulnerabilidades si no son tomadas en cuenta. La herramienta de análisis estático ayuda a los programadores a poder tener un mejor entendimiento y visualización del funcionamiento del código que programen, además de automáticamente encontrar y advertir de posibles fallas en el desarrollo de un programa. Consideramos que la velocidad del analizador también es importante, ya que podemos obtener resultados hasta 10 veces mas rápido que acercamientos dinámicos como el de la herramienta MIRI. 
+
+
+
