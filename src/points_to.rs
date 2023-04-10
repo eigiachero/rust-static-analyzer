@@ -85,8 +85,7 @@ impl PointsToGraph {
             let outgoing_edges = self.graph.neighbors(index).count();
             let incoming_edges = self.graph.neighbors_undirected(index).count() - outgoing_edges;
             if incoming_edges >= 2 {
-                let variable = index.index()+1;
-                //println!("Variable {:#?} may have aliasing", variable);
+                let variable = self.graph.raw_nodes()[index.index()].weight as usize;
                 result.push(variable);
             }
         }

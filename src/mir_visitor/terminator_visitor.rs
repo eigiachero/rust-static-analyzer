@@ -52,10 +52,16 @@ impl<'tcx> MirVisitor<'tcx> {
                 let mutable_args: Vec<Operand> = args.clone().drain_filter(|arg| self.is_mutable(arg)).collect();
                 if mutable_args.len() >= 2 {
                     println!("Caution: This function call contains two or more mutable arguments");
-                    let (a, b) = (self.operand_as_u32(&mutable_args[0]), self.operand_as_u32(&mutable_args[1]));
-                    if self.alias_graph.are_alias(a,b) {
-                        println!("WARNING: Calling function with two mutable arguments that are alias");
-                    }
+                    'args_loop: 
+                    for i in 0..mutable_args.len() {
+                        for j in i+1..mutable_args.len() {
+                            let (a, b) = (self.operand_as_u32(&mutable_args[i]), self.operand_as_u32(&mutable_args[j]));
+                            if self.alias_graph.are_alias(a,b) {
+                                println!("WARNING: Calling function with two mutable arguments that are alias");
+                                break 'args_loop;
+                            }
+                        }                        
+                    }                    
                 }
 
                 // Visit inside function
