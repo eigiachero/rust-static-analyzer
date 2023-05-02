@@ -1,19 +1,27 @@
 \chapter{El sistema de tipos de Rust}
 
-Rust es un lenguaje de tipado estático, es decir, realiza la especificación y comprobación de tipos durante el tiempo de compilación y no mientras el programa se esta ejecutando. Además, provee una herramienta muy potente que es la inferencia de tipos. Gracias a esto no es necesario declarar los tipos de las variables de manera explicita en la mayor parte de los casos, sino que Rust infiere que clase de valores mediante un análisis del contexto durante la compilación del programa. Además, esto ayuda a prevenir errores comunes como los errores de tipo y mejora la seguridad y eficiencia del código.
+Rust es un lenguaje de tipado estático, es decir, realiza la especificación y comprobación de tipos durante el tiempo de compilación y no mientras el programa se está ejecutando. Además, provee una herramienta muy potente que es la inferencia de tipos. Gracias a esto no es necesario declarar los tipos de las variables de manera explícita en la mayor parte de los casos, sino que Rust infiere que clase de valores mediante un análisis del contexto durante la compilación del programa. Además, esto ayuda a prevenir errores comunes como los errores de tipo y mejora la seguridad y eficiencia del código.
 
-A pesar de ser un lenguaje de tipado estático, provee a través de la palabra reservada \textbf{dyn} la posibilidad de realizar el chequeo de tipos en tiempos de ejecución. Si bien al hacer esto perdemos las ventajas de velocidad y seguridad que Rust brinda al realizar los chequeos estáticos, se otorga mayores libertades a la hora de escribir código. Esto puede ser util especialmente en casos donde cierta información, como por ejemplo el tamaño de un valor, es desconocida durante la compilación.
+A pesar de ser un lenguaje de tipado estático, provee a través de la palabra reservada \textbf{dyn} la posibilidad de realizar el chequeo de tipos en tiempos de ejecución. Si bien al hacer esto perdemos las ventajas de velocidad y seguridad que Rust brinda al realizar los chequeos estáticos, se otorga mayores libertades a la hora de escribir código. Esto puede ser útil especialmente en casos donde cierta información, como por ejemplo el tamaño de un valor, es desconocida durante la compilación.
 
 Los tipos primitivos de Rust son los siguientes:
 \begin{enumerate}
     \item Enteros: Los enteros son tipos numéricos que no tienen parte fraccionaria. En Rust, los enteros se pueden dividir en dos categorías: enteros con signo (signed) y enteros sin signo (unsigned). Los enteros con signo son aquellos que pueden ser positivos, negativos o cero, mientras que los enteros sin signo son aquellos que solo pueden ser positivos o cero. Los enteros pueden ser: u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, isize y usize. El carácter i al comienzo representa a los con signo mientras que el carácter u indica los enteros sin signo, ambos seguidos del tamaño de bits que utilizan.
     \item  Flotantes: Los flotantes son tipos numéricos que tienen una parte fraccionaria. En Rust, los flotantes se dividen en dos categorías: flotantes de precisión simple (f32) y flotantes de doble precisión (f64).
     \item  Booleanos: Los booleanos son tipos que solo pueden tener dos valores: true o false. El tipo booleano en Rust es bool.
-    \item  Caracteres: Los caracteres son tipos que representan un solo carácter Unicode. El tipo caracter en Rust es char.
+    \item  Caracteres: Los caracteres son tipos que representan un solo carácter Unicode. El tipo carácter en Rust es char.
     \item Cadenas: Las cadenas son tipos que representan una secuencia de caracteres Unicode. El tipo cadena en Rust es str. Además, hay dos tipos de cadenas adicionales: String, que es una cadena que se puede cambiar, y \&str, que es una referencia a una cadena.
 \end{enumerate}
 
-Los tipos compuestos son aquellos que pueden agrupar varios valores en un solo tipo. Rust tiene dos tipos compuestos primitivos: tuplas y arreglos. Las tuplas agrupan varios valores en una sola variable donde cada valor puede tener un tipo diferente. Los arreglos son tipos que almacenan una cantidad fija de valores del mismo tipo. A diferencia de las tuplas, todos los valores deben tener el mismo tipo.
+Los tipos compuestos son aquellos que pueden agrupar varios valores en un solo tipo. Rust tiene dos tipos compuestos primitivos: tuplas y arreglos. Los tipos de datos compuestos más comunes en Rust son:
+\begin{enumerate}
+    \item Structs: Permiten agrupar diferentes valores de diferentes tipos bajo un mismo nombre. Se utilizan para definir tipos de datos más complejos que pueden tener propiedades y comportamientos específicos.
+    \item Enums: Sirven para definir un conjunto de valores posibles. Cada valor posible puede estar asociado a uno o varios tipos de datos, lo que permite crear tipos de datos compuestos más complejos.
+    \item Tuplas: Se utilizan agrupar diferentes valores en una sola variable donde cada valor puede tener un tipo diferente. A diferencia de los structs, los campos de las tuplas no poseen nombres, sino que los valores se acceden mediante índices.
+    \item Arrays: Los arreglos o arrays son tipos que almacenan una cantidad fija de valores del mismo tipo. A diferencia de las tuplas, todos los valores deben tener el mismo tipo. Los arrays son útiles cuando se necesita trabajar con un conjunto de valores fijo y conocido de antemano.
+\end{enumerate}
+
+Además de estos tipos de datos compuestos, Rust también tiene punteros y referencias, que son tipos especiales que se utilizan para referirse a valores en la memoria.
 
 \section{Polimorfismo y Traits}
 
@@ -42,23 +50,23 @@ pub fn main() {
 \end{lstlisting}
 
 Rust, a diferencia de otros lenguajes orientados a objetos como Java o C++, no implementa el concepto de Herencia. Este es un mecanismo por el cual un objeto puede heredar elementos de otra definición de objetos, para de esta manera, acceder a los datos e implementaciones de un objeto ``padre'' sin tener que redefinirlos nuevamente.
-Este mecanismo esta siendo criticado y dejado de utilizar, ya que a menudo se corre el riesgo de compartir más código del necesario entre las distintas subclases. A su vez, limita la flexibilidad en el diseño y puede provocar errores al llamarse métodos que no apliquen a una subclase.
+Este mecanismo está siendo criticado y dejado de utilizar, ya que a menudo se corre el riesgo de compartir más código del necesario entre las distintas subclases. A su vez, limita la flexibilidad en el diseño y puede provocar errores al llamarse métodos que no apliquen a una subclase.
 El sistema de tipos de Rust en cambio utiliza el concepto de polimorfismo paramétrico, que refiere a la capacidad de una función de recibir por parámetro valores de diferentes tipos. Además de evitar las desventajas del uso de Herencia, esta decisión permite mayor libertad a la hora de hacer uso de covarianza (hacer uso de un tipo más derivado o especifico) y contravarianza (hacer uso de un tipo menos derivado o especifico).
 
 Para implementar el polimorfismo, Rust toma otro enfoque distinto mediante el uso de genericidad y Traits. \cite{rustbook} definen una trait o rasgo define la funcionalidad que un tipo particular tiene y puede compartir con otros. Se utilizan los traits para definir comportamientos compartidos de manera abstracta. Podemos usarlos para especificar un tipo genérico, que puede ser aplicado para todo el que cumpla con los rasgos marcados. Tienen una similitud a las interfaces, pero con algunas diferencias. Los Traits de Rust se acercan más a los type-classes de Haskell que a las interfaces de Java.
 
-El comportamiento de un tipo esta marcado por las funciones que proporciona. Diferentes tipos comparten el comportamiento si se puede llamar las mismas funciones en todos esos tipos. Los traits o rasgos son una manera de agrupar estos métodos y definir el conjunto de comportamiento. 
+El comportamiento de un tipo está marcado por las funciones que proporciona. Diferentes tipos comparten el comportamiento si se pueden aplicar esas funciones sobre valores de esos tipos. Los traits o rasgos son una manera de agrupar estos métodos y definir el conjunto de comportamiento. 
 
 Algunos de los traits más comunes en Rust incluyen:
 \begin{itemize}
     \item Copy: Este trait indica que un tipo puede ser copiado de forma segura utilizando una simple operación de copia de bits. Este trait es muy común en Rust y se utiliza en muchos tipos de datos básicos, como enteros y flotantes.
-    \item  Clone: Este trait indica que un tipo puede ser clonado, es decir, copiado a un nuevo valor independiente del original. Este trait se utiliza comúnmente en tipos de datos más complejos, como estructuras y tuplas.
+    \item  Clone: Este trait indica que un tipo puede ser clonado, es decir, copiado a un nuevo valor independiente del original. Se utiliza comúnmente en tipos de datos más complejos, como estructuras y tuplas.
     \item PartialEq y Eq: Estos traits indican que un tipo puede ser comparado por igualdad (==) y desigualdad (!=).
     \item PartialOrd y Ord: Estos traits indican que un tipo puede ser comparado por orden, es decir, si un valor es menor, mayor o igual a otro valor. PartialOrd es un subtrait de Ord, que indica que un tipo puede ser parcialmente ordenado.
     \item Debug: Este trait permite imprimir valores de un tipo de datos para depuración o registro. Se utiliza comúnmente en Rust para imprimir mensajes de error y depuración.
 \end{itemize}
 
-En el ejemplo anterior, la clase Square implementa el método area, y si quisiéramos crear una clase Rectangle también deberíamos implementar exactamente la misma función. En el caso de una implementación de Circle o Circulo, la información que almacena el objeto y el cuerpo de la función \textit{} seria un poco diferente, pero todas estas clases aunque tengan sus particularidades comparten los rasgos de una Figure o figura geométrica.
+En el ejemplo anterior, la clase Square implementa el método area, y si quisiéramos crear una clase Rectangle también deberíamos implementar exactamente la misma función. En el caso de una implementación de Circle o Círculo, la información que almacena el objeto y el cuerpo de la función \textit{} seria un poco diferente, pero todas estas clases aunque tengan sus particularidades comparten los rasgos de una Figure o figura geométrica.
 
 Cambiando un poco el código, podemos obtener una implementación que permita hacer uso del Rasgo y de esta manera lograr la que funciones genéricas hagan uso del mismo en vez de clases particulares y obtener los beneficios del polimorfismo.
 
@@ -74,13 +82,19 @@ impl Square for Figure {
 }
 \end{lstlisting}
 
-En este caso definimos un único método dentro del Trait, pero pueden haber múltiples donde cada encabezado debe estar en una linea diferente y terminar con un punto y coma.
+En este caso definimos un único método dentro del Trait, pero puede haber múltiples donde cada encabezado debe estar en una línea diferente y terminar con un punto y coma.
+
+Los traits no necesariamente tienen que definir interfaces, un trait representa un concepto o una capacidad que se puede compartir entre diferentes tipos. Algunos de estos traits están incluidos dentro del compilador y tienen una semántica predefinida. Algunos ejemplos de esto pueden ser el trait Send que indica que un tipo es seguro para ser enviado de un thread a otro thread. El trait Sync, por otro lado, indica que un tipo es seguro para ser compartido entre múltiples threads simultáneamente sin la necesidad de utilizar mecanismos de sincronización adicionales, como mutexes. 
+
+Por ejemplo, para implementar el trait Send en un tipo personalizado, la implementación debe garantizar que el tipo no contiene referencias a memoria compartida o referencias a sí mismo. Esto se debe a que, si el objeto se envía a través de diferentes threads de ejecución, cualquier referencia a memoria compartida podría causar problemas de seguridad y conflictos de memoria. Al realizar una implementación de cualquier trait ``built-in'' o incluido con el compilador debemos garantizar no solo que se mantenga la seguridad del programa, sino que también se garantice el cumplimiento del objetivo definido por el concepto de la trait.
+
+Por esto, es importante tener en cuenta que algunos traits incluidos tienen una semántica predefinida por el compilador y que no pueden ser redefinidos por el usuario. Sin embargo, los usuarios pueden definir sus propios traits que sí definan interfaces y capacidades específicas para sus tipos personalizados.
 
 \section{Lifetimes}
 
-Según \Citeauthor*{rustbook} un \textit{lifetime} o tiempo de vida es una construcción del compilador (mas específicamente del \textit{borrow checker}) usada para asegurar que todos los prestamos sean validos. El tiempo de vida de una variable comienza cuando es creada y termina cuando es destruida. Mientras que lifetimes y scopes son usualmente referidos juntos, no son lo mismo.
+Según \Citeauthor*{rustbook} un \textit{lifetime} o tiempo de vida es una construcción del compilador (más específicamente del \textit{borrow checker}) usada para asegurar que todos los préstamos sean válidos. El tiempo de vida de una variable comienza cuando es creada y termina cuando es destruida. Mientras que lifetimes y scopes son usualmente referidos juntos, no son lo mismo.
 
-Por ejemplo, en el caso de que tomemos prestada una variable a traves de una referencia. El borrow tiene un lifetime que esta determinado por donde es declarado. Y como resultado, este es válido mientras que termine antes de que el owner sea destruido. En cambio, el scope del préstamo esta determinado por el bloque en el que la referencia es usada.
+Por ejemplo, en el caso de que tomemos prestada una variable a través de una referencia. El borrow tiene un lifetime que está determinado por donde es declarado. Y como resultado, este es válido mientras que termine antes de que el owner sea destruido. En cambio, el scope del préstamo está determinado por el bloque en el que la referencia es usada.
 
 \begin{lstlisting}[language=Rust]
 fn main() {
@@ -97,7 +111,7 @@ fn main() {
 
 \end{lstlisting}
 
-En el ejemplo anterior podemos ver como los scopes y lifetimes están relacionados y se diferencian. Hay que notar también que en el código no se utilizaron nombres o tipos asignados para las etiquetas de los tiempos de vida. Esto es gracias al mecanismo de ``\textbf{lifetime elision}'' que implementa el compilador de Rust, que al igual que con los tipos, es capaz de identificar en gran medida los lifetimes y colocarlos automáticamente sin necesidad de establecer las etiquetas de manera explicita.
+En el ejemplo anterior podemos ver como los scopes y lifetimes están relacionados y se diferencian. Hay que notar también que en el código no se utilizaron nombres o tipos asignados para las etiquetas de los tiempos de vida. Esto es gracias al mecanismo de ``\textbf{lifetime elision}'' que implementa el compilador de Rust, que al igual que con los tipos, es capaz de identificar en gran medida los lifetimes y colocarlos automáticamente sin necesidad de establecer las etiquetas de manera explícita.
 
 Sin embargo, cuando dos o más lifetimes están involucrados es necesario establecer explícitamente que las variables tienen diferentes lifetimes. Para esto se utiliza el operador \textbf{\'} seguido de una letra. Un ejemplo de esto podría ser el encabezado de la función longest, que compararía dos variables que contengan cadenas, y una de estas podría tener un tiempo de vida mayor que la otra. Esto se representaría de la siguiente manera.
 
@@ -105,7 +119,7 @@ Sin embargo, cuando dos o más lifetimes están involucrados es necesario establ
     fn longest<'a, 'b>(x: &'a str, y: &'b str) -> &'a &str;
 \end{lstlisting}
 
-Existe un lifetime especial \textbf{'static} (estática) que denota que una referencia puede vivir por la duración entera de la ejecución del programa. Es necesario recalcar que su uso debe ser pensado con cuidado, porque podrían generarse referencias colgadas o problemas de compatibilidad entre lifetimes. Generalmente suelen ser utilizadas unicamente para crear constantes globales.
+Existe un lifetime especial \textbf{'static} (estática) que denota que una referencia puede vivir por la duración entera de la ejecución del programa. Es necesario recalcar que su uso debe ser pensado con cuidado, porque podrían generarse referencias colgadas o problemas de compatibilidad entre lifetimes. Generalmente suelen ser utilizadas únicamente para crear constantes globales.
 
 Sin tener en cuenta el mecanismo de \textbf{lifetime elision}, las declaraciones de funciones deben cumplir con las siguientes restricciones:
 \begin{itemize}
@@ -118,7 +132,7 @@ Estas reglas también se extienden para las declaraciones de métodos, structs y
 
 Una de las mayores atracciones de Rust son las garantías de seguridad estáticas sobre el manejo de memoria. Sin embargo, los chequeos estáticos son conservadores por naturaleza. Existen programas que son seguros, pero el compilador no puede verificar que lo sean y los rechaza. Además, realizar programaciones de bajo nivel como interacciones directas con partes del sistema operativo o inclusive implementar un sistema operativo son tareas inherentemente riesgosas. Por estos motivos, existe Unsafe Rust. Al utilizar la palabra reservada \textbf{unsafe} creamos un nuevo bloque para que contenga las operaciones inseguras, y le comunicamos al compilador que entendemos los riesgos y relaje sus restricciones para el mismo.
 
-\cite{rustbook} (capitulo 19) establece que las acciones o \textit{superpoderes} que se pueden hacer en unsafe Rust y no en safe Rust son:
+\cite{rustbook} (capítulo 19) establece que las acciones o \textit{superpoderes} que se pueden hacer en unsafe Rust y no en safe Rust son:
 \begin{itemize}
     \item Acceder o actualizar una variable mutable estática.
     \item Dereferenciar un apuntador plano (raw pointer).
@@ -126,13 +140,14 @@ Una de las mayores atracciones de Rust son las garantías de seguridad estática
 \end{itemize}
 Y es importante recalcar que utilizar unsafe no desactiva el \textit{borrow-checker} ni ninguno de los otros chequeos de seguridad de Rust: si utilizas una referencia en unsafe rust, se le realizaran los chequeos de igual manera.
 
-No todo lo que este dentro de un bloque unsafe es necesariamente riesgoso o va a acceder de una manera invalida a la memoria. Toda persona esta sujeta a fallos y los errores pueden cometerse, por eso al realizar operaciones inseguras en bloques anotados y delimitados por \textbf{unsafe} ayuda al aislamiento y facilidad de encontrar los errores relacionados con los problemas de seguridad de la memoria. Al encapsular código unsafe en bloques pequeños también se evita propagar los fallos a otros bloques o librerías que no estén relacionadas o que se asuman seguras.
+No todo lo que este dentro de un bloque unsafe es necesariamente riesgoso o va a acceder de una manera invalida a la memoria. Toda persona está sujeta a fallos y los errores pueden cometerse, por eso al realizar operaciones inseguras en bloques anotados y delimitados por \textbf{unsafe} ayuda al aislamiento y facilidad de encontrar los errores relacionados con los problemas de seguridad de la memoria. Al encapsular código unsafe en bloques pequeños también se evita propagar los fallos a otros bloques o librerías que no estén relacionadas o que se asuman seguras.
 
-Los punteros planos son tipo en Unsafe Rust que son muy similares a las referencias, pero también se diferencian de estas. Los apuntadores planos te permiten llevar a cabo aritmética de punteros arbitraria, y pueden causar un numero de problemas de seguridad. En algunos sentidos, la habilidad de dereferenciar un apuntador arbitrario es una de las cosas mas peligrosas que puedes hacer.
+En Rust, un puntero plano (en inglés, raw pointer) es un tipo de dato que permite apuntar a una dirección de memoria específica sin tener en cuenta la propiedad de los datos a los que apunta.   Son útiles para interactuar con código de bajo nivel o para trabajar con bibliotecas de otros lenguajes. Sin embargo, el uso incorrecto de punteros planos puede generar errores de seguridad y de memoria, por lo que se debe tener cuidado al utilizarlos. 
+Tanto las referencias como los punteros planos tienen similitudes en cuanto a su capacidad para apuntar a una dirección de memoria, pero las referencias son seguras y verificadas por el compilador mientras que los punteros planos no lo son.
 A diferencia de las referencias, los punteros planos:
 \begin{itemize}
-    \item Permiten ignorar las reglas de borrow (préstamo) al tener punteros mutables e inmutables o multiples punteros mutables en un mismo bloque.
-    \item No garantizan apuntar a un sector valido de la memoria
+    \item Permiten ignorar las reglas de borrow (préstamo) al tener punteros mutables e inmutables o múltiples punteros mutables en un mismo bloque.
+    \item No garantizan apuntar a un sector válido de la memoria
     \item Pueden ser null (vacíos o no inicializados)
 \end{itemize}
 
@@ -148,11 +163,11 @@ Al igual que las referencias, los raw pointers pueden ser mutables o inmutables 
     }
 \end{lstlisting}
 
-En este simple ejemplo podemos ver como se crean punteros planos usando la palabra reservada \textbf{as} para hacer un casteo de una referencia mutable o inmutable a su raw pointer correspondiente. También podemos observar que no es necesario crear punteros planos dentro de un bloque unsafe ya que no genera ningún peligro; sin embargo, cuando tratamos de acceder a los valores que apuntan pueden generarse comportamientos inadecuados en el programa y por lo tanto deben enmarcarse en unsafe. En el ejemplo, usamos el operador \textbf{*} para acceder a la información apuntada por una referencia o puntero plano, y asi mostrarla por pantalla usando la macro \textit{println!}.
+En este simple ejemplo podemos ver como se crean punteros planos usando la palabra reservada \textbf{as} para hacer un casteo de una referencia mutable o inmutable a su raw pointer correspondiente. También podemos observar que no es necesario crear punteros planos dentro de un bloque unsafe, ya que no genera ningún peligro; sin embargo, cuando tratamos de acceder a los valores que apuntan pueden generarse comportamientos inadecuados en el programa y por lo tanto deben enmarcarse en unsafe. En el ejemplo, usamos el operador \textbf{*} para acceder a la información apuntada por una referencia o puntero plano, y así mostrarla por pantalla usando la macro \textit{println!}.
 
-Podemos notar que ambos punteros mutable e immutable apuntan a la misma dirección de memoria, donde value esta almacenada. Si hubiésemos utilizado referencias, el programa no habría compilado ya que se rompen las reglas del \textit{borrow-checker}. En el ejemplo anterior estamos accediendo a una variable de manera inmutable y luego podemos potencialmente modificarla mediante el puntero mutable, lo que produciría una condición de carrera.
+Podemos notar que ambos punteros mutable e inmutable apuntan a la misma dirección de memoria, donde value está almacenada. Si hubiésemos utilizado referencias el programa no habría compilado, ya que se rompen las reglas del \textit{borrow-checker}. En el ejemplo anterior estamos accediendo a una variable de manera inmutable y luego podemos potencialmente modificarla mediante el puntero mutable, lo que produciría una condición de carrera.
 
-El siguiente fragmento de código seria rechazado por el compilador si no se hiciera uso del unsafe:
+El siguiente fragmento de código sería rechazado por el compilador si no se hiciera uso del unsafe:
 \begin{lstlisting}[language=Rust]
     let mut num = 3;
 
@@ -167,13 +182,13 @@ El siguiente fragmento de código seria rechazado por el compilador si no se hic
 
 En este programa, podemos ver que existen dos punteros planos mutables que comparten la misma dirección de memoria, en la que se encuentra el valor de num. Si se hicieran uso de referencias en vez de raw-pointers, se romperían las reglas del \textit{borrow-checker} y por lo tanto el código no compilaría. Vemos que las variables \textbf{x} e \textbf{y} están ambas modificando el mismo valor. Si no se tiene cuidado, esto puede generar problemas como inconsistencia en la memoria, condiciones de carrera, comportamientos no deseados en el programa, fugas en la memoria, etc.
 
-Aun asi, muchos pueden optar por hacer uso de esta herramienta para implementar programas de una manera mas eficiente o simple. Un ejemplo de esto, mencionado también por el libro de referencia de Rust, son las listas doblemente encadenadas, la cual no tiene una estructura de árbol y es complicado crearlas solo en safe rust. Extendiendo una lista simple utilizando raw-pointers y bloques unsafe para apuntar a nodos anteriores da una solución simple a este problema.
+Aun así, muchos pueden optar por hacer uso de esta herramienta para implementar programas de una manera más eficiente o simple. Un ejemplo de esto, mencionado también por el libro de referencia de Rust, son las listas doblemente encadenadas, la cual no tiene una estructura de árbol y es complicado crearlas solo en safe rust. Extendiendo una lista simple utilizando raw-pointers y bloques unsafe para apuntar a nodos anteriores da una solución simple a este problema.
 
-\Citeauthor{learningwithlists} explora de manera didáctica la creación de estas listas encadenadas, y los contratiempos que uno se encuentra con los diferentes métodos de implementar estas estructuras. Ella establece que el problema más importante es el aliasing de punteros. Dos punteros son alias cuando apuntan a una misma dirección de memoria. El compilador usa la información acerca de donde referencian los punteros para optimizar los accesos a la memoria, por eso si la información que tiene es errónea entonces el programa va a ser mal compilado y generar resultados aleatorios que no sirven. El compilador debe saber cuando es seguro asumir que valor puede ser "recordado" (cache) en vez de ser leido reiteradamente.
+\Citeauthor{learningwithlists} explora de manera didáctica la creación de estas listas encadenadas, y los contratiempos que uno se encuentra con los diferentes métodos de implementar estas estructuras. Ella establece que el problema más importante es el aliasing de punteros. Dos punteros son alias cuando apuntan a una misma dirección de memoria. El compilador usa la información acerca de donde referencian los punteros para optimizar los accesos a la memoria, por eso si la información que tiene es errónea entonces el programa va a ser mal compilado y generar resultados aleatorios que no sirven. El compilador debe saber cuando es seguro asumir que valor puede ser "recordado" (cache) en vez de ser leído reiteradamente.
 
 \section{Trabajos relacionados}
 
-MIRI \cite{miri} es un interprete experimental de la representación intermedia del nivel medio (MIR) de Rust. Esta desarrollada al mismo tiempo que el compilador, y tiene como objetivo ayudar a encontrar ciertos casos de comportamiento no deseado en los programas de Rust. Entre algunos que podemos mencionar son:
+MIRI \cite{miri} es un intérprete experimental de la representación intermedia del nivel medio (MIR) de Rust. Está desarrollada al mismo tiempo que el compilador, y tiene como objetivo ayudar a encontrar ciertos casos de comportamiento no deseado en los programas de Rust. Entre algunos que podemos mencionar son:
 \begin{itemize}
     \item Acceso de memoria out-of-bounds y use-after-free
     \item Uso de valores sin inicializar
@@ -183,11 +198,11 @@ MIRI \cite{miri} es un interprete experimental de la representación intermedia 
 \end{itemize}
 Con esta herramienta no es posible detectar todos los posibles comportamientos no deseados, pero podría considerarse como la herramienta estándar de los programadores Rust para encontrar errores en el código debido a la diversidad de errores importantes que ataca y a su alto nivel de mantenimiento. Ellos creen que el aliasing también es un problema muy importante, y por eso implementan Stacked Borrows \cite{stackedborrows} para afrontarlo. Stacked borrows es una semántica operacional  para Rust, que define condiciones bien marcadas en las cuales Rust exhibe comportamiento indeseado debido a errores de aliasing.
 
-La idea principal de su implementación es definir una version dinámica del análisis estático (o \textit{borrow-checker}), que Rust ya utiliza para comprobar que las referencias sean accedidas de manera acorde con las reglas que venimos mencionando. A pesar de que esta idea es muy buena, realizar los chequeos de manera dinámica reduce tiene un efecto en el rendimiento y además la herramienta MIRI requiere de información extra como la existencia de tests o definiciones de pre y post condiciones para poder hacer ciertos tests.
+La idea principal de su implementación es definir una versión dinámica del análisis estático (o \textit{borrow-checker}), que Rust ya utiliza para comprobar que las referencias sean accedidas de manera acorde con las reglas que venimos mencionando. A pesar de que esta idea es muy buena, realizar los chequeos de manera dinámica reduce tiene un efecto en el rendimiento y además la herramienta MIRI requiere de información extra como la existencia de tests o definiciones de pre y post condiciones para poder hacer ciertos tests.
 
-Rudra \cite{rudra} es un analizador estático el cuál su objetivo principal es la detección de los comportamientos indefinidos comunes en Rust. Es capaz de analizar tanto programas simples como paquetes de cargo. Los bugs detectados por esta herramienta son problemas de Panic Safety, Higher Order Invariant y Send Sync Variance, los cuales se producen cuando se mal utiliza el unsafe en situaciones particulares, como al generarse un panic o realizarse un mal uso de código asíncrono. Si bien su enfoque es distinto, al utilizar análisis estático es muy eficiente y esto se ve evidenciado en que fue capaz de analizar la totalidad de los paquetes publicados en crates.io en menos de 7 horas.
+Rudra \cite{rudra} es un analizador estático el cual su objetivo principal es la detección de los comportamientos indefinidos comunes en Rust. Es capaz de analizar tanto programas simples como paquetes de cargo. Los bugs detectados por esta herramienta son problemas de Panic Safety, Higher Order Invariant y Send Sync Variance, los cuales se producen cuando sé mal utiliza el unsafe en situaciones particulares, como al generarse un panic o realizarse un mal uso de código asíncrono. Si bien su enfoque es distinto, al utilizar análisis estático es muy eficiente y esto se ve evidenciado en que fue capaz de analizar la totalidad de los paquetes publicados en crates.io en menos de 7 horas.
 
 Otro proyecto a tener en cuanta es MirChecker \cite{li2021mirchecker}, que al igual que Rudra y este trabajo, utiliza un análisis estático del MIR para crear un framework automatizado para la detección de bugs. Realizan una cantidad muy grande de tests en donde comprueban errores matemáticos, lógicos, loops infinitos, accesos fuera de rangos, usos después de liberación de memoria, etc. Esta herramienta no es tan utilizada como MIRI o Rudra, pero al ser muy diversa es útil para detectar muchos errores.
 
-Todos estos proyectos tratan de enfocar los conflictos que pueden encontrarse al hacer uso de Unsafe Rust, e inclusive utilizan métodos y enfoques similares, pero cada uno apunta a resolver obstáculos diferentes. Este proyecto toma en cuenta las bases sentadas por estas herramientas, y nos enfocaremos a atacar problemas especificos diferentes que creemos que son igual de importantes, y esperamos que el uso conjunto con alguna de las anteriores permita abarcar y encontrar una mayor cantidad de errores de código.
+Todos estos proyectos tratan de enfocar los conflictos que pueden encontrarse al hacer uso de Unsafe Rust, e inclusive utilizan métodos y enfoques similares, pero cada uno apunta a resolver obstáculos diferentes. Este proyecto toma en cuenta las bases sentadas por estas herramientas, y nos enfocaremos a atacar problemas específicos diferentes que creemos que son igual de importantes, y esperamos que el uso conjunto con alguna de las anteriores permita abarcar y encontrar una mayor cantidad de errores de código.
 
