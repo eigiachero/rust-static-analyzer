@@ -19,7 +19,7 @@ impl<'tcx> MirVisitor<'tcx> {
         terminator: &Terminator<'tcx>,
         location: Location
     ) {
-        println!("{:#?} Terminator {:#?} | {:#?}", location, terminator.kind, self.stacked_borrows);
+        //println!("{:#?} Terminator {:#?} | {:#?}", location, terminator.kind, self.stacked_borrows);
         // println!("{:#?} Terminator {:#?}", location, terminator.kind);
         match terminator.kind.clone() {
             TerminatorKind::Call {
